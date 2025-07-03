@@ -249,7 +249,6 @@ const SAVE_KEY = 'gemochi_save_v2';
 const STAT_MAX = 100;
 const DEATH_TIMER_DURATION = 30000;
 const TIME_SPEED_MULTIPLIER = 20;
-const DECAY_TICK_INTERVAL = 30000; // 30 seconds for stat decay
 
 const FEMALE_NAMES = ["Lia", "Pixel", "Nina", "Gabi", "Tete", "Carol", "Emi", "Flora", "Maya", "Yuki"];
 const PERSONALITIES = ['TIMIDA', 'CALADA', 'IMPULSIVA', 'BOCA_SUJA', 'FOFA', 'MALANDRA', 'PIADISTA', 'SAFADA', 'BAGUNCEIRA', 'NORMAL', 'MENTE_FECHADA'];
@@ -277,82 +276,63 @@ const LOCATION_NAMES = {
 };
 
 const LOCATION_BACKGROUNDS = {
-    SALA_DE_ESTAR: 'https://i.imgur.com/v83F41j.png', // Living Room
-    QUARTO: 'https://i.imgur.com/eBwSj3d.png',      // Bedroom
-    COZINHA: 'https://i.imgur.com/iC5e3sv.png',       // Kitchen
-    BANHEIRO: 'https://i.imgur.com/jPBsHgr.png',     // Bathroom
-    QUINTAL: 'https://i.imgur.com/2s3D3sA.png',       // Backyard
+    SALA_DE_ESTAR: 'https://i.imgur.com/v83F41j.png',
+    QUARTO: 'https://i.imgur.com/eBwSj3d.png',
+    COZINHA: 'https://i.imgur.com/iC5e3sv.png',
+    BANHEIRO: 'https://i.imgur.com/jPBsHgr.png',
+    QUINTAL: 'https://i.imgur.com/2s3D3sA.png',
     SORVETERIA: 'https://i.imgur.com/eBwZ8r2.png',
     SHOPPING: 'https://i.imgur.com/bT6nB6j.png',
     BOLICHE: 'https://i.imgur.com/sSgWnFf.png',
 };
 
-const PROPOSAL_DIALOGUE = {
-    petText: "Eu... preciso te dizer algo. Sinto que o que temos é mais que amizade. Você... quer namorar comigo?",
-    isProposal: true, positiveResponse: { text: "Sim! Eu quero!", moodEffect: 50 }, negativeResponse: { text: "Desculpe, não sinto o mesmo.", moodEffect: -50 },
-};
-
-const MARRIAGE_PROPOSAL_DIALOGUE = {
-    petText: "Meu amor... eu não consigo mais imaginar um futuro que não seja com você nele. Você... aceita se casar comigo?",
-    isProposal: true, isMarriage: true, positiveResponse: { text: "Sim, mil vezes sim!" }, negativeResponse: { text: "Eu... não posso." }
-};
-
-
-// --- DIALOGUE DATABASE GENERATION ---
 const DIALOGUE_MATRIX = {
     NORMAL: {
-        UNKNOWN: { pet: ["O dia está meio {adj}.", "Pensando no que fazer hoje...", "Às vezes o silêncio é bom, né?"], pos: ["Concordo.", "Tenho umas ideias.", "Sim, é relaxante."], neg: ["Achei normal.", "Sei lá.", "Detesto silêncio."], fragments: { adj: ['parado', 'estranho', 'calmo'] } },
-        FRIEND: { pet: ["Se a gente tivesse um super poder, qual seria o mais inútil?", "Qual a sua opinião sobre {topic}?", "Lembra daquela vez que a gente {memory}?"], pos: ["Controlar a cor do céu.", "Acho uma loucura.", "Como esquecer!"], neg: ["Não sei.", "Tanto faz.", "Não lembro disso."], fragments: { topic: ['abacaxi na pizza', 'gatos dominando o mundo'], memory: ['tentou cozinhar e queimou tudo', 'riu até a barriga doer'] } },
-        GIRLFRIEND: { pet: ["Pensei na gente hoje.", "Saudades de você, mesmo estando aqui do lado.", "Você me faz tão bem."], pos: ["Eu também pensei em nós.", "Own, que fofo.", "Você também me faz bem."], neg: ["Que legal.", "Que exagero.", "Ok."] }
+        FRIEND: [
+            { q: "Se a gente tivesse um super poder, qual seria o mais inútil?", p: "Controlar a cor do céu.", n: "Não sei." },
+            { q: "Qual a sua opinião sobre abacaxi na pizza?", p: "Acho uma delícia!", n: "É um crime." },
+            { q: "Lembra daquela vez que a gente tentou cozinhar?", p: "Como esquecer! Quase queimamos a casa.", n: "Não lembro disso." },
+        ],
+        GIRLFRIEND: [
+            { q: "Pensei na gente hoje. Do nada.", p: "Eu também penso na gente o tempo todo.", n: "Que legal da sua parte." },
+            { q: "Sinto saudades de você, mesmo com você aqui do lado.", p: "Own, que fofa. Eu também sinto.", n: "Que exagero, eu tô aqui." },
+            { q: "Você me faz um bem que você nem imagina.", p: "E você me faz a pessoa mais feliz do mundo.", n: "Você também é legal." },
+        ]
     },
     FOFA: {
-        UNKNOWN: { pet: ["O-oi... {emote}", "O dia está bonito hoje, né?", "Espero... não estar incomodando..."], pos: ["Oi! Tudo bem?", "Sim, está lindo.", "Você nunca incomoda."], neg: ["Oi.", "Tanto faz.", "Está sim."], fragments: { emote: ['(⁄ ⁄>⁄ ▽ ⁄<⁄ ⁄)', '(´｡• ᵕ •｡`)', '(*^.^*)'] } },
-        FRIEND: { pet: ["Vamos ver um filme bem bobinho e comer pipoca até a barriga doer?", "E se a gente fizesse uma cabana de cobertores aqui na sala?", "Me conta um segredo seu? Eu conto um meu! {emote}"], pos: ["Amei a ideia!", "SÓ VAMOS!", "Claro, pode começar."], neg: ["Prefiro outra coisa.", "Que bagunça...", "Melhor não."], fragments: { emote: ['(o´▽`o)', '(^w^)', '(*≧▽≦)'] } },
+        FRIEND: [
+            { q: "Vamos ver um filme bem bobinho e comer pipoca até a barriga doer? (o´▽`o)", p: "Amei a ideia! Vamos!", n: "Prefiro outra coisa." },
+            { q: "E se a gente fizesse uma cabana de cobertores aqui na sala?", p: "SÓ VAMOS! Vai ser incrível!", n: "Que bagunça... melhor não." },
+        ]
     },
     BOCA_SUJA: {
-        UNKNOWN: { pet: ["E aí, porra. Tá olhando o quê?", "Que saco, nada pra fazer nessa merda.", "Fala logo o que tu quer."], pos: ["Admirando a paisagem.", "A gente inventa algo.", "Calma, porra."], neg: ["Perdi meu tempo.", "A culpa é sua.", "Não te devo satisfação."] },
-        HATE: { pet: ["Some da minha frente, caralho.", "Não enche meu saco, vai se foder.", "Encosta em mim de novo e eu quebro sua cara."], pos: ["Ok, tô indo.", "Foi mal.", "Credo, pra que isso?"], neg: ["Me obrigue.", "O problema é seu.", "Tenta a sorte, otário."]},
+        HATE: [
+            { q: "Some da minha frente, caralho.", p: "Ok, tô indo.", n: "Me obrigue." },
+            { q: "Não enche meu saco, vai se foder.", p: "Foi mal, não queria irritar.", n: "O problema é seu, porra." },
+        ]
     }
 };
 
 let dialogueDatabase = {};
 
-function getRandom(arr) {
-    if (!arr || arr.length === 0) return '';
-    return arr[Math.floor(Math.random() * arr.length)];
-}
+// --- UTILITY FUNCTIONS ---
+const getRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const getAffectionTierKey = (affection) => Object.keys(AFFECTION_TIERS).find(key => affection >= AFFECTION_TIERS[key].min && affection <= AFFECTION_TIERS[key].max) || 'UNKNOWN';
 
-function createDialogueSet(count, petTemplates, posTemplates, negTemplates, fragments = {}) {
-    const dialogues = [];
-    if (!petTemplates || petTemplates.length === 0) return [{ petText: '...', positiveResponse: { text: 'Ok.' }, negativeResponse: { text: '...' } }];
-    
-    for (let i = 0; i < count; i++) {
-        let petText = getRandom(petTemplates);
-        for (const key in fragments) {
-            if (petText.includes(`{${key}}`)) {
-                petText = petText.replace(new RegExp(`{${key}}`, 'g'), getRandom(fragments[key]));
-            }
-        }
-        dialogues.push({
-            petText: petText,
-            positiveResponse: { text: getRandom(posTemplates), moodEffect: 10, affectionEffect: 2 },
-            negativeResponse: { text: getRandom(negTemplates), moodEffect: -10, affectionEffect: -2 },
-        });
-    }
-    return dialogues;
-}
-
+// --- DIALOGUE DATABASE ---
 function buildFullDatabase() {
     const finalDb = {};
-    const tiers = Object.keys(AFFECTION_TIERS);
-
     for (const p of PERSONALITIES) {
         finalDb[p] = {};
-        for (const t of tiers) {
+        for (const t of Object.keys(AFFECTION_TIERS)) {
             const personalityMatrix = DIALOGUE_MATRIX[p] || DIALOGUE_MATRIX.NORMAL;
-            const affectionMatrix = personalityMatrix[t] || personalityMatrix.UNKNOWN || DIALOGUE_MATRIX.NORMAL.UNKNOWN;
+            const affectionDialogues = personalityMatrix[t] || personalityMatrix.FRIEND || [{ q: "...", p: "Entendo.", n: "..." }];
             
-            finalDb[p][t] = createDialogueSet(50, affectionMatrix.pet, affectionMatrix.pos, affectionMatrix.neg, affectionMatrix.fragments);
+            finalDb[p][t] = affectionDialogues.map(d => ({
+                petText: d.q,
+                positiveResponse: { text: d.p, moodEffect: 10, affectionEffect: 2 },
+                negativeResponse: { text: d.n, moodEffect: -10, affectionEffect: -2 },
+            }));
         }
     }
     return finalDb;
@@ -361,7 +341,6 @@ function buildFullDatabase() {
 
 // --- DOM ELEMENTS ---
 const dom = {
-    appWrapper: document.getElementById('app-wrapper'),
     header: {
         location: document.getElementById('location-display'),
         personality: document.getElementById('personality-display'),
@@ -392,14 +371,20 @@ const dom = {
     }
 };
 
-
-// --- GAME STATE & LOGIC ---
+// --- GAME STATE & CORE LOGIC ---
 let gameState = {};
-let gameIntervals = { clock: null, decay: null, movement: null, death: null, save: null };
-let interactionTimeout = null;
+let gameLoopId = null;
+let timers = {
+    lastClock: 0, lastDecay: 0, lastDeathCheck: 0, lastSave: 0,
+    movementTimeout: null, interactionTimeout: null,
+};
+const CLOCK_INTERVAL = 1000;
+const DECAY_INTERVAL = 30000;
+const DEATH_CHECK_INTERVAL = 1000;
+const SAVE_INTERVAL = 5000;
 
-function saveState() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(gameState)); } catch (e) { console.warn("Failed to save state.", e); } }
-function loadState() { try { const saved = localStorage.getItem(SAVE_KEY); return saved ? JSON.parse(saved) : null; } catch (e) { console.warn("Failed to load state.", e); return null; } }
+const saveState = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(gameState)); } catch (e) { console.warn("Failed to save state.", e); } };
+const loadState = () => { try { const saved = localStorage.getItem(SAVE_KEY); return saved ? JSON.parse(saved) : null; } catch (e) { console.warn("Failed to load state.", e); return null; } };
 
 function createNewGame() {
     const personality = getRandom(PERSONALITIES);
@@ -408,224 +393,201 @@ function createNewGame() {
         personality: personality,
         personalityName: PERSONALITY_NAMES[personality],
         characterImageUrl: './character.png',
-        mood: 80, hunger: 80, hygiene: 80,
-        affection: 0,
-        isAlive: true,
-        deathType: null,
+        mood: 80, hunger: 80, hygiene: 80, affection: 0,
+        isAlive: true, deathType: null,
         gameTime: { year: 1, month: 1, day: 1, hour: 8, minute: 0 },
-        zeroHungerTime: null,
-        zeroMoodTime: null,
-        currentLocation: 'QUARTO',
-        view: 'HOME',
-        isTalking: false,
-        isWalking: false,
-        facingDirection: 'right',
-        transitionDuration: '0s',
-        charPositionX: 0,
-        currentDialogue: null,
+        zeroHungerTime: null, zeroMoodTime: null,
+        currentLocation: 'QUARTO', view: 'HOME',
+        isTalking: false, isWalking: false, facingDirection: 'right',
+        transitionDuration: '0s', charPositionX: 0, currentDialogue: null,
     };
 }
 
-function getAffectionTier(affection) {
-    for (const key in AFFECTION_TIERS) {
-        if (affection >= AFFECTION_TIERS[key].min && affection <= AFFECTION_TIERS[key].max) return key;
-    }
-    return 'UNKNOWN';
-}
-
-function showInteractionMessage(text, duration = 2000) {
+const showInteractionMessage = (text, duration = 2000) => {
     dom.ui.interactionPopup.textContent = text;
     dom.ui.interactionPopup.classList.remove('hidden');
-    if (interactionTimeout) clearTimeout(interactionTimeout);
-    interactionTimeout = setTimeout(() => dom.ui.interactionPopup.classList.add('hidden'), duration);
-}
+    if (timers.interactionTimeout) clearTimeout(timers.interactionTimeout);
+    timers.interactionTimeout = setTimeout(() => dom.ui.interactionPopup.classList.add('hidden'), duration);
+};
 
-// --- RENDER ---
-function render() {
-    if (!gameState || Object.keys(gameState).length === 0) return;
-
-    // Time & Location
+// --- RENDER FUNCTIONS ---
+const render = () => {
+    if (!gameState || !gameState.isAlive) return;
     const time = gameState.gameTime;
     dom.header.time.textContent = `D${time.day}/${time.month} - ${String(time.hour).padStart(2, '0')}:${String(time.minute).padStart(2, '0')}`;
     dom.header.location.textContent = `${gameState.name} em ${LOCATION_NAMES[gameState.currentLocation]}`;
     dom.header.personality.textContent = `Personalidade: ${gameState.personalityName}`;
 
-    // Screen background & sky color
     dom.screen.style.backgroundImage = `url(${LOCATION_BACKGROUNDS[gameState.currentLocation]})`;
+    
     const hour = gameState.gameTime.hour;
     let skyColor = 'rgba(0,0,0,0)';
-    if (hour < 7) skyColor = 'rgba(15, 56, 15, 0.5)';
-    else if (hour < 8) skyColor = 'rgba(255, 147, 41, 0.2)';
-    else if (hour < 18) skyColor = 'rgba(0,0,0,0)';
-    else if (hour < 20) skyColor = 'rgba(255, 147, 41, 0.3)';
-    else if (hour < 22) skyColor = 'rgba(23, 76, 133, 0.4)';
-    else skyColor = 'rgba(15, 56, 15, 0.5)';
+    if (hour < 7) {
+        skyColor = 'rgba(15, 56, 15, 0.5)';
+    } else if (hour < 8) {
+        skyColor = 'rgba(255, 147, 41, 0.2)';
+    } else if (hour < 18) {
+        skyColor = 'rgba(0,0,0,0)';
+    } else if (hour < 20) {
+        skyColor = 'rgba(255, 147, 41, 0.3)';
+    } else if (hour < 22) {
+        skyColor = 'rgba(23, 76, 133, 0.4)';
+    } else {
+        skyColor = 'rgba(15, 56, 15, 0.5)';
+    }
     dom.screen.style.backgroundColor = skyColor;
     
-    // Character
     dom.character.image.src = gameState.characterImageUrl;
     dom.character.container.style.transition = `transform ${gameState.transitionDuration} linear`;
     dom.character.container.style.transform = `translateX(${gameState.charPositionX}px) scaleX(${gameState.facingDirection === 'right' ? 1 : -1})`;
     dom.character.container.classList.toggle('walking', gameState.isWalking);
     
-    // Stats
     dom.ui.moodBar.style.width = `${gameState.mood}%`;
     dom.ui.hungerBar.style.width = `${gameState.hunger}%`;
     dom.ui.hygieneBar.style.width = `${gameState.hygiene}%`;
-    const affectionTierName = AFFECTION_TIERS[getAffectionTier(gameState.affection)].name;
+    const affectionTierName = AFFECTION_TIERS[getAffectionTierKey(gameState.affection)].name;
     dom.ui.affectionStatus.innerHTML = `Afeto: <span class="affection-tier-name">${affectionTierName}</span>`;
 
-    // Dialogue
     dom.ui.speechBubble.classList.toggle('visible', gameState.isTalking);
     if(gameState.isTalking) dom.ui.speechBubble.textContent = gameState.currentDialogue.petText;
+};
 
-    // Actions
-    renderActions();
-
-    // Death state
-    dom.character.bob.className = 'character-bob'; // reset animation class
-    if (gameState.deathType) {
-        dom.overlays.cutscene.classList.remove('hidden');
-        dom.character.bob.classList.add(`anim-${gameState.deathType}`);
-        dom.character.rope.classList.toggle('hidden', gameState.deathType !== 'sadness');
-        dom.character.knife.classList.toggle('hidden', gameState.deathType !== 'psycho');
-    } else {
-        dom.overlays.cutscene.classList.add('hidden');
-        dom.character.rope.classList.add('hidden');
-        dom.character.knife.classList.add('hidden');
-    }
-}
-
-function renderActions() {
+const renderActions = () => {
     const container = dom.ui.actionsContainer;
-    container.innerHTML = ''; // Clear previous buttons
-
-    if (!gameState.isAlive) {
-        container.innerHTML = `<p class="action-info-text">...</p>`;
-        return;
-    }
+    container.innerHTML = '';
+    if (!gameState.isAlive) return;
     
     if (gameState.isTalking) {
         const d = gameState.currentDialogue;
-        container.innerHTML = `
-            <button class="action-btn" data-action="dialogue" data-type="positive">${d.positiveResponse.text}</button>
-            <button class="action-btn" data-action="dialogue" data-type="negative">${d.negativeResponse.text}</button>
-            ${d.isProposal ? '' : '<button class="action-btn wide-btn" data-action="dialogue" data-type="leave">[Sair]</button>'}
-        `;
+        container.innerHTML = `<button class="action-btn" data-action="dialogue" data-type="positive">${d.positiveResponse.text}</button>
+                               <button class="action-btn" data-action="dialogue" data-type="negative">${d.negativeResponse.text}</button>
+                               ${d.isProposal ? '' : '<button class="action-btn wide-btn" data-action="dialogue" data-type="leave">[Sair]</button>'}`;
         return;
     }
     
-    const affectionTier = getAffectionTier(gameState.affection);
+    const affectionTier = getAffectionTierKey(gameState.affection);
     const isDatingOrMarried = affectionTier === 'GIRLFRIEND' || affectionTier === 'WIFE';
-
+    const isWife = affectionTier === 'WIFE';
     let buttons = [];
+
     if (isDatingOrMarried) {
         switch(gameState.view) {
             case 'HOME':
-                buttons.push({ text: 'Cômodos', action: 'setView', value: 'MENU_COMODOS' });
-                buttons.push({ text: 'Interagir', action: 'setView', value: 'MENU_INTERACOES' });
-                buttons.push({ text: 'Conversar', action: 'talk' });
+                buttons = [ { text: 'Cômodos', action: 'setView', value: 'MENU_COMODOS' },
+                            { text: 'Interagir', action: 'setView', value: 'MENU_INTERACOES' },
+                            { text: 'Conversar', action: 'talk' } ];
                 break;
             case 'MENU_COMODOS':
-                buttons.push({ text: 'Quarto', action: 'setLocation', value: 'QUARTO' });
-                buttons.push({ text: 'Sala', action: 'setLocation', value: 'SALA_DE_ESTAR' });
-                buttons.push({ text: 'Cozinha', action: 'setLocation', value: 'COZINHA' });
-                if (affectionTier === 'WIFE') buttons.push({ text: 'Quintal', action: 'setLocation', value: 'QUINTAL' });
+                buttons = [ { text: LOCATION_NAMES.QUARTO, action: 'setLocation', value: 'QUARTO' },
+                            { text: LOCATION_NAMES.SALA_DE_ESTAR, action: 'setLocation', value: 'SALA_DE_ESTAR' },
+                            { text: LOCATION_NAMES.COZINHA, action: 'setLocation', value: 'COZINHA' },
+                            { text: LOCATION_NAMES.BANHEIRO, action: 'setLocation', value: 'BANHEIRO' }];
+                if (isWife) buttons.push({ text: LOCATION_NAMES.QUINTAL, action: 'setLocation', value: 'QUINTAL' });
                 buttons.push({ text: 'Voltar', action: 'setView', value: 'HOME', wide: true });
                 break;
             case 'MENU_INTERACOES':
-                 switch(gameState.currentLocation) {
-                    case 'QUARTO': buttons.push({ text: 'Oba-oba', action: 'interact', value: 'oba' }); break;
-                    case 'COZINHA': buttons.push({ text: 'Alimentar', action: 'feed' }); break;
-                    case 'SALA_DE_ESTAR': buttons.push({ text: 'Assistir Filme', action: 'interact', value: 'movie' }); break;
-                    case 'QUINTAL': buttons.push({ text: 'Viagem', action: 'setView', value: 'MENU_VIAGEM' }); break;
-                 }
-                buttons.push({ text: 'Armário', action: 'setView', value: 'MENU_ARMARIO' });
-                buttons.push({ text: 'Voltar para Casa', action: 'goHome', wide: true });
+                const loc = gameState.currentLocation;
+                if (loc === 'QUARTO') {
+                    buttons.push({ text: 'Deitar', action: 'interact', value: 'deitar' });
+                    buttons.push({ text: 'Oba-oba', action: 'interact', value: 'oba' });
+                    buttons.push({ text: 'Armário', action: 'setView', value: 'MENU_ARMARIO' });
+                } else if (loc === 'COZINHA') {
+                    buttons.push({ text: 'Alimentar', action: 'feed' });
+                    if(isWife) buttons.push({ text: 'Cozinhar Junto', action: 'interact', value: 'cozinharJunto' });
+                } else if (loc === 'SALA_DE_ESTAR') {
+                    buttons.push({ text: 'Assistir Filme', action: 'interact', value: 'movie' });
+                    if(isWife) buttons.push({ text: 'Maratonar Séries', action: 'interact', value: 'maratonar' });
+                } else if (loc === 'BANHEIRO') {
+                    buttons.push({ text: 'Limpar', action: 'wash' });
+                    buttons.push({ text: 'Tomar Banho Juntos', action: 'interact', value: 'banhoJuntos' });
+                } else if (loc === 'QUINTAL' && isWife) {
+                    buttons.push({ text: 'Brincar ao Ar Livre', action: 'interact', value: 'brincar' });
+                    buttons.push({ text: 'Viagem', action: 'setView', value: 'MENU_VIAGEM' });
+                } else if (loc === 'SORVETERIA') {
+                    buttons.push({ text: 'Comprar Sorvete', action: 'interact', value: 'sorvete' });
+                } else if (loc === 'SHOPPING') {
+                    buttons.push({ text: 'Comprar Roupas', action: 'interact', value: 'comprarRoupas' });
+                } else if (loc === 'BOLICHE') {
+                    buttons.push({ text: 'Jogar Boliche', action: 'interact', value: 'jogarBoliche' });
+                }
+                const backAction = ['SORVETERIA', 'SHOPPING', 'BOLICHE'].includes(loc) ? { text: 'Voltar para Casa', action: 'goHome', wide: true } : { text: 'Voltar', action: 'setView', value: 'HOME', wide: true };
+                buttons.push(backAction);
                 break;
             case 'MENU_VIAGEM':
-                buttons.push({ text: 'Sorveteria', action: 'setLocation', value: 'SORVETERIA' });
-                buttons.push({ text: 'Shopping', action: 'setLocation', value: 'SHOPPING' });
-                buttons.push({ text: 'Boliche', action: 'setLocation', value: 'BOLICHE' });
-                buttons.push({ text: 'Voltar', action: 'setView', value: 'MENU_INTERACOES', wide: true });
+                buttons = [ { text: 'Sorveteria', action: 'setLocation', value: 'SORVETERIA' },
+                            { text: 'Shopping', action: 'setLocation', value: 'SHOPPING' },
+                            { text: 'Boliche', action: 'setLocation', value: 'BOLICHE' },
+                            { text: 'Voltar', action: 'setView', value: 'MENU_INTERACOES', wide: true } ];
                 break;
             case 'MENU_ARMARIO':
-                container.innerHTML = `<label class="action-btn file-upload-label"> Importar Imagem <input type="file" id="image-upload" accept="image/*" style="display: none;" /> </label>`;
-                container.innerHTML += `<button class="action-btn wide-btn" data-action="setView" data-value="MENU_INTERACOES">Voltar</button>`;
+                container.innerHTML = `<label class="action-btn file-upload-label"> Importar Imagem <input type="file" id="image-upload" accept="image/*" style="display: none;" /> </label>
+                                       <button class="action-btn wide-btn" data-action="setView" data-value="MENU_INTERACOES">Voltar</button>`;
                 return;
         }
     } else {
-        buttons.push({ text: 'Alimentar', action: 'feed' });
-        buttons.push({ text: 'Limpar', action: 'wash' });
-        const canTalk = affectionTier !== 'HATE' && affectionTier !== 'PSYCHOPATH';
-        buttons.push({ text: 'Conversar', action: 'talk', disabled: !canTalk });
+        buttons = [ { text: 'Alimentar', action: 'feed' },
+                    { text: 'Limpar', action: 'wash' },
+                    { text: 'Conversar', action: 'talk', disabled: affectionTier === 'HATE' || affectionTier === 'PSYCHOPATH' } ];
     }
-
     container.innerHTML = buttons.map(b => `<button class="action-btn ${b.wide ? 'wide-btn': ''}" data-action="${b.action}" data-value="${b.value || ''}" ${b.disabled ? 'disabled' : ''}>${b.text}</button>`).join('');
 }
 
 
-// --- GAME LOOPS & ACTIONS ---
+// --- ACTIONS ---
 function handleActionClick(e) {
     const target = e.target.closest('button[data-action]');
     if (!target || !gameState.isAlive) return;
 
     const { action, value, type } = target.dataset;
 
-    switch (action) {
-        case 'feed':
-            gameState.hunger = Math.min(STAT_MAX, gameState.hunger + 25);
-            gameState.mood = Math.min(STAT_MAX, gameState.mood + 5);
-            showInteractionMessage(`${gameState.name} comeu e parece satisfeita.`);
-            break;
-        case 'wash':
-            gameState.hygiene = STAT_MAX;
-            showInteractionMessage(`Você limpou ${gameState.name}.`);
-            break;
-        case 'talk':
-            handleTalk();
-            break;
-        case 'dialogue':
-            handleDialogueChoice(type);
-            break;
-        case 'setView':
-            gameState.view = value;
-            break;
-        case 'setLocation':
-            gameState.currentLocation = value;
-            gameState.view = 'HOME';
-            break;
-        case 'goHome':
-            gameState.currentLocation = 'QUARTO';
-            gameState.view = 'HOME';
-            break;
-        case 'interact':
-            if (value === 'oba') showInteractionMessage('As luzes diminuem... :)', 3000);
-            if (value === 'movie') showInteractionMessage('Vocês assistem a um filme romântico.', 3000);
+    const actions = {
+        feed: () => { gameState.hunger = Math.min(STAT_MAX, gameState.hunger + 25); gameState.mood = Math.min(STAT_MAX, gameState.mood + 5); showInteractionMessage(`${gameState.name} comeu e parece satisfeita.`); },
+        wash: () => { gameState.hygiene = STAT_MAX; showInteractionMessage(`Você limpou ${gameState.name}.`); },
+        talk: () => handleTalk(),
+        dialogue: () => handleDialogueChoice(type),
+        setView: () => { gameState.view = value; },
+        setLocation: () => { gameState.currentLocation = value; gameState.view = 'MENU_INTERACOES'; },
+        goHome: () => { gameState.currentLocation = 'SALA_DE_ESTAR'; gameState.view = 'HOME'; },
+        interact: () => {
+            const interactions = {
+                'deitar': 'Vocês deitam juntos e conversam baixinho.',
+                'oba': 'As luzes diminuem... :)',
+                'movie': 'Vocês assistem a um filme romântico no sofá.',
+                'maratonar': 'Pipoca, cobertor e uma temporada inteira. Que noite!',
+                'cozinharJunto': 'Vocês preparam uma refeição deliciosa juntos.',
+                'banhoJuntos': 'Um banho quente e relaxante...',
+                'brincar': 'Vocês brincam no quintal e riem muito.',
+                'sorvete': 'Ela diz: "A gente podia vir aqui mais vezes!"',
+                'comprarRoupas': '[LOJA] Vocês olham as vitrines.',
+                'jogarBoliche': '[MINIGAME] STRIKE! Você é demais nisso!'
+            };
+            showInteractionMessage(interactions[value] || '...', 3000);
             gameState.mood = Math.min(STAT_MAX, gameState.mood + 15);
-            break;
-    }
-    render();
+            gameState.view = 'HOME';
+        }
+    };
+    if (actions[action]) actions[action]();
 }
 
 function handleTalk() {
     if (gameState.isTalking) return;
-    const affectionTier = getAffectionTier(gameState.affection);
-    const dialogues = dialogueDatabase[gameState.personality]?.[affectionTier] || dialogueDatabase.NORMAL.UNKNOWN;
+    const affectionTier = getAffectionTierKey(gameState.affection);
+    const dialogues = dialogueDatabase[gameState.personality]?.[affectionTier] || dialogueDatabase.NORMAL.FRIEND;
     const dialogue = getRandom(dialogues);
     
-    // Check for proposals
-    const oldAffection = gameState.affection;
-    if(oldAffection >= 90 && oldAffection <= 95 && affectionTier === 'BEST_FRIEND') {
-        gameState.currentDialogue = PROPOSAL_DIALOGUE;
-    } else if (oldAffection >= 150 && oldAffection <= 155 && affectionTier === 'GIRLFRIEND') {
-        gameState.currentDialogue = MARRIAGE_PROPOSAL_DIALOGUE;
+    const specialDialogues = {
+        PROPOSAL: { petText: "Eu... preciso te dizer algo. Você... quer namorar comigo?", isProposal: true, positiveResponse: { text: "Sim! Eu quero!" }, negativeResponse: { text: "Desculpe, não sinto o mesmo." } },
+        MARRIAGE: { petText: "Meu amor... aceita se casar comigo?", isProposal: true, isMarriage: true, positiveResponse: { text: "Sim, mil vezes sim!" }, negativeResponse: { text: "Eu... não posso." } }
+    };
+
+    if (gameState.affection >= 90 && affectionTier === 'BEST_FRIEND') {
+        gameState.currentDialogue = specialDialogues.PROPOSAL;
+    } else if (gameState.affection >= 150 && affectionTier === 'GIRLFRIEND') {
+        gameState.currentDialogue = specialDialogues.MARRIAGE;
     } else {
         gameState.currentDialogue = dialogue;
     }
-    
     gameState.isTalking = true;
-    render();
 }
 
 function handleDialogueChoice(type) {
@@ -641,80 +603,62 @@ function handleDialogueChoice(type) {
             }
         } else {
             const response = d[type === 'positive' ? 'positiveResponse' : 'negativeResponse'];
-            gameState.mood = Math.max(0, Math.min(STAT_MAX, gameState.mood + response.moodEffect));
-            gameState.affection += response.affectionEffect;
+            gameState.mood = Math.max(0, Math.min(STAT_MAX, gameState.mood + (response.moodEffect || 0)));
+            gameState.affection += response.affectionEffect || 0;
         }
     }
     gameState.isTalking = false;
     gameState.currentDialogue = null;
-    render();
 }
 
-function handleImageUpload(e) {
+const handleImageUpload = (e) => {
     const file = e.target.files?.[0];
     if (file) {
         const reader = new FileReader();
-        reader.onload = (event) => {
-            gameState.characterImageUrl = event.target.result;
-            showInteractionMessage("Visual atualizado!", 2000);
-            render();
-        };
+        reader.onload = (event) => { gameState.characterImageUrl = event.target.result; showInteractionMessage("Visual atualizado!"); };
         reader.readAsDataURL(file);
     }
-}
+};
 
-function clockTick() {
-    if (!gameState.isAlive) return;
+// --- UPDATE FUNCTIONS (Called by Game Loop) ---
+const updateClock = () => {
     let { year, month, day, hour, minute } = gameState.gameTime;
     minute += TIME_SPEED_MULTIPLIER;
     if (minute >= 60) { hour += Math.floor(minute / 60); minute %= 60; }
     if (hour >= 24) { day += Math.floor(hour / 24); hour %= 24; }
-    if (day > 30) { month += Math.floor(day / 30); day %= 30; if(day === 0) day = 1; }
-    if (month > 12) { year += Math.floor(month / 12); month %= 12; if(month === 0) month = 1; }
+    if (day > 30) { month += Math.floor(day / 30); day %= 30; if (day === 0) day = 1; }
+    if (month > 12) { year += Math.floor(month / 12); month %= 12; if (month === 0) month = 1; }
     gameState.gameTime = { year, month, day, hour, minute };
-    render();
-}
+};
 
-function decayTick() {
-    if (!gameState.isAlive || gameState.isTalking) return;
+const updateDecay = () => {
+    if (gameState.isTalking) return;
     gameState.hunger = Math.max(0, gameState.hunger - 1);
     gameState.hygiene = Math.max(0, gameState.hygiene - 1);
     const isDirty = gameState.hygiene < 30;
     gameState.mood = Math.max(0, gameState.mood - (isDirty ? 1.5 : 1));
-    render();
-}
+};
 
-function deathCheck() {
-    if (!gameState.isAlive) return;
-    
-    // Hunger death
+const updateDeathCheck = () => {
     if (gameState.hunger <= 0) {
         if (gameState.zeroHungerTime === null) gameState.zeroHungerTime = Date.now();
         if (Date.now() - gameState.zeroHungerTime > DEATH_TIMER_DURATION) { triggerDeath('hunger'); return; }
-    } else {
-        gameState.zeroHungerTime = null;
-    }
+    } else { gameState.zeroHungerTime = null; }
 
-    // Sadness death
     if (gameState.mood <= 0) {
         if (gameState.zeroMoodTime === null) gameState.zeroMoodTime = Date.now();
         if (Date.now() - gameState.zeroMoodTime > DEATH_TIMER_DURATION) { triggerDeath('sadness'); return; }
-    } else {
-        gameState.zeroMoodTime = null;
-    }
+    } else { gameState.zeroMoodTime = null; }
 
-    // Psycho death
-    if (getAffectionTier(gameState.affection) === 'PSYCHOPATH') {
-        triggerDeath('psycho');
-    }
-}
+    if (getAffectionTierKey(gameState.affection) === 'PSYCHOPATH') triggerDeath('psycho');
+};
 
 function triggerDeath(reason) {
     if (!gameState.isAlive) return;
-    
-    stopGame();
     gameState.isAlive = false;
     gameState.deathType = reason;
+    stopGame(); // Stop all updates
+
     let msg = '';
     switch (reason) {
         case 'hunger': msg = `${gameState.name} desmaiou de fraqueza e não acordou mais.`; break;
@@ -722,7 +666,11 @@ function triggerDeath(reason) {
         case 'psycho': msg = `Ela te olhou com um vazio aterrorizante... Você apagou.`; break;
     }
     
-    render(); // Render the death animation
+    dom.overlays.cutscene.classList.remove('hidden');
+    dom.character.bob.className = 'character-bob';
+    dom.character.bob.classList.add(`anim-${gameState.deathType}`);
+    dom.character.rope.classList.toggle('hidden', gameState.deathType !== 'sadness');
+    dom.character.knife.classList.toggle('hidden', gameState.deathType !== 'psycho');
     
     setTimeout(() => {
         dom.overlays.gameOver.classList.remove('hidden');
@@ -730,47 +678,58 @@ function triggerDeath(reason) {
     }, 2500);
 }
 
-function movementTick() {
-    clearTimeout(gameIntervals.movement); // Clear previous timeout
+function updateMovement() {
+    clearTimeout(timers.movementTimeout);
     if (gameState.isTalking || !gameState.isAlive || gameState.deathType) {
         gameState.isWalking = false;
-        render();
-        gameIntervals.movement = setTimeout(movementTick, Math.random() * 3000 + 2000);
+        timers.movementTimeout = setTimeout(updateMovement, Math.random() * 3000 + 2000);
         return;
     }
+    
     const isCurrentlyWalking = Math.random() > 0.4;
     if (isCurrentlyWalking) {
         const newTargetX = (Math.random() - 0.5) * 350;
         gameState.facingDirection = newTargetX > gameState.charPositionX ? 'right' : 'left';
         const distance = Math.abs(newTargetX - gameState.charPositionX);
-        const walkSpeed = 50;
-        const walkDuration = Math.max(1000, (distance / walkSpeed) * 1000);
+        const walkDuration = Math.max(1000, (distance / 50) * 1000);
         
         gameState.transitionDuration = `${walkDuration / 1000}s`;
         gameState.charPositionX = newTargetX;
         gameState.isWalking = true;
-        render();
         
-        gameIntervals.movement = setTimeout(() => {
+        timers.movementTimeout = setTimeout(() => {
             gameState.isWalking = false;
-            render();
-            gameIntervals.movement = setTimeout(movementTick, Math.random() * 3000 + 2000);
+            timers.movementTimeout = setTimeout(updateMovement, Math.random() * 3000 + 2000);
         }, walkDuration);
     } else {
         gameState.isWalking = false;
-        render();
-        gameIntervals.movement = setTimeout(movementTick, Math.random() * 3000 + 2000);
+        timers.movementTimeout = setTimeout(updateMovement, Math.random() * 3000 + 2000);
     }
 }
 
+// --- GAME LOOP & INITIALIZATION ---
+function gameLoop(timestamp) {
+    if (!gameState.isAlive) {
+        gameLoopId = null;
+        return;
+    }
+    
+    if (timestamp - timers.lastClock > CLOCK_INTERVAL) { updateClock(); timers.lastClock = timestamp; }
+    if (timestamp - timers.lastDecay > DECAY_INTERVAL) { updateDecay(); timers.lastDecay = timestamp; }
+    if (timestamp - timers.lastDeathCheck > DEATH_CHECK_INTERVAL) { updateDeathCheck(); timers.lastDeathCheck = timestamp; }
+    if (timestamp - timers.lastSave > SAVE_INTERVAL) { saveState(); timers.lastSave = timestamp; }
+
+    render();
+    renderActions();
+    
+    gameLoopId = requestAnimationFrame(gameLoop);
+}
+
 function stopGame() {
-    Object.values(gameIntervals).forEach(id => {
-        if (id) {
-            clearInterval(id);
-            clearTimeout(id);
-        }
-    });
-    gameIntervals = { clock: null, decay: null, movement: null, death: null, save: null };
+    if (gameLoopId) cancelAnimationFrame(gameLoopId);
+    clearTimeout(timers.movementTimeout);
+    clearTimeout(timers.interactionTimeout);
+    gameLoopId = null;
 }
 
 function init() {
@@ -779,29 +738,24 @@ function init() {
     const savedState = loadState();
     gameState = (savedState && savedState.isAlive) ? savedState : createNewGame();
     
-    // Hide overlays on start/restart
     dom.overlays.cutscene.classList.add('hidden');
     dom.overlays.gameOver.classList.add('hidden');
+    dom.character.bob.className = 'character-bob';
+    dom.character.rope.classList.add('hidden');
+    dom.character.knife.classList.add('hidden');
 
-    gameIntervals.clock = setInterval(clockTick, 1000);
-    gameIntervals.decay = setInterval(decayTick, DECAY_TICK_INTERVAL);
-    gameIntervals.death = setInterval(deathCheck, 1000);
-    movementTick(); // Start the first movement tick
-
-    // Save game state periodically
-    gameIntervals.save = setInterval(saveState, 5000);
+    timers = { lastClock: 0, lastDecay: 0, lastDeathCheck: 0, lastSave: 0 };
+    updateMovement();
     
-    render();
+    gameLoopId = requestAnimationFrame(gameLoop);
 }
 
-// Attach listeners once
 dom.ui.actionsContainer.addEventListener('click', handleActionClick);
 dom.overlays.restartBtn.addEventListener('click', init);
 document.body.addEventListener('change', e => {
-    if (e.target.id === 'image-upload') handleImageUpload(e);
+    if (e.target && e.target.id === 'image-upload') handleImageUpload(e);
 });
 
-// Start the game
 init();
 
 });
