@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GigaPet AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+      body {
+        font-family: 'Roboto Mono', monospace;
+      }
+      .font-pixel {
+        font-family: 'Press Start 2P', cursive;
+      }
+      .hidden {
+        display: none;
+      }
+       @keyframes pulse_1 { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+      .animate-pulse_1 { animation: pulse_1 1s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+      .animate-pulse_2 { animation: pulse_1 1s cubic-bezier(0.4, 0, 0.6, 1) 0.2s infinite; }
+      .animate-pulse_3 { animation: pulse_1 1s cubic-bezier(0.4, 0, 0.6, 1) 0.4s infinite; }
+    </style>
+    <script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://esm.sh/@google/genai@^0.15.0",
+    "react": "https://esm.sh/react@^19.1.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
+    "react/": "https://esm.sh/react@^19.1.0/"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body class="bg-slate-900 text-white">
+    <div id="app-container" class="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-4 text-white font-pixel">
+      <div class="w-full max-w-4xl mx-auto flex flex-col lg:flex-row gap-8">
+        
+        <!-- Left Panel: Pet & Stats -->
+        <div class="lg:w-1/2 bg-slate-800/50 p-6 rounded-2xl shadow-lg border border-slate-700 backdrop-blur-sm">
+          <h1 class="text-4xl text-cyan-300 mb-4 text-center">GigaPet AI</h1>
+          
+          <div id="pet-display" class="flex flex-col items-center justify-center bg-slate-700/50 p-8 rounded-lg my-4 border border-slate-600">
+            <div id="pet-emoji" class="text-8xl mb-4 transition-transform duration-500 ease-in-out transform scale-100 hover:scale-110">😐</div>
+            <p id="pet-status-text" class="text-xl text-cyan-300 h-6">I'm okay.</p>
+          </div>
+          
+          <div class="space-y-4 mt-6">
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-sm uppercase tracking-wider">Hunger</span>
+                <span id="hunger-value" class="text-sm font-bold">80%</span>
+              </div>
+              <div class="w-full bg-slate-700 rounded-full h-4 border-2 border-slate-600">
+                <div id="hunger-bar" class="bg-yellow-500 h-full rounded-full transition-all duration-500 ease-out" style="width: 80%;"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-sm uppercase tracking-wider">Happiness</span>
+                <span id="happiness-value" class="text-sm font-bold">80%</span>
+              </div>
+              <div class="w-full bg-slate-700 rounded-full h-4 border-2 border-slate-600">
+                <div id="happiness-bar" class="bg-green-500 h-full rounded-full transition-all duration-500 ease-out" style="width: 80%;"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-sm uppercase tracking-wider">Energy</span>
+                <span id="energy-value" class="text-sm font-bold">80%</span>
+              </div>
+              <div class="w-full bg-slate-700 rounded-full h-4 border-2 border-slate-600">
+                <div id="energy-bar" class="bg-blue-500 h-full rounded-full transition-all duration-500 ease-out" style="width: 80%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <div id="action-buttons" class="grid grid-cols-3 gap-3 mt-6">
+            <button id="feed-btn" class="w-full text-center py-3 px-4 rounded-lg font-bold transition-all duration-200 ease-in-out transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none bg-yellow-500 hover:bg-yellow-400 text-slate-900">Feed</button>
+            <button id="play-btn" class="w-full text-center py-3 px-4 rounded-lg font-bold transition-all duration-200 ease-in-out transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none bg-green-500 hover:bg-green-400 text-slate-900">Play</button>
+            <button id="sleep-btn" class="w-full text-center py-3 px-4 rounded-lg font-bold transition-all duration-200 ease-in-out transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none bg-purple-600 hover:bg-purple-500 text-white">Sleep</button>
+          </div>
+
+          <div id="game-over-view" class="text-center mt-6 hidden">
+              <p class="text-red-500 text-2xl mb-4">Game Over!</p>
+              <button id="restart-btn" class="bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-bold py-2 px-4 rounded-lg transition-colors">Restart</button>
+          </div>
+        </div>
+
+        <!-- Right Panel: Chat -->
+        <div class="lg:w-1/2 bg-slate-800/50 p-6 rounded-2xl shadow-lg border border-slate-700 backdrop-blur-sm flex flex-col">
+          <h2 class="text-2xl text-cyan-300 mb-4 text-center font-pixel">Chat with Giga</h2>
+            <div id="chat-container" class="flex-grow bg-slate-900/70 rounded-lg p-4 overflow-y-auto mb-4 border border-slate-700 min-h-[300px]">
+                <div id="chat-placeholder" class="flex items-center justify-center h-full text-slate-400">
+                    Say something to your pet!
+                </div>
+                <div id="chat-messages" class="space-y-4"></div>
+            </div>
+            <form id="chat-form" class="flex gap-2">
+                <input id="chat-input" type="text" placeholder="Say something..." class="flex-grow bg-slate-700 border border-slate-600 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-all disabled:opacity-50 font-sans" />
+                <button id="chat-send-btn" type="submit" class="bg-cyan-500 text-slate-900 font-bold px-6 py-3 rounded-lg hover:bg-cyan-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    Send
+                </button>
+            </form>
+        </div>
+
+      </div>
+       <footer class="text-center mt-8 text-slate-500 text-sm font-sans">
+        <p>A Tamagotchi-inspired game using vanilla JS & Gemini AI.</p>
+        <p>Your chat history is not saved. Refreshing will restart your conversation.</p>
+      </footer>
+    </div>
+
+<script type="module">
+import { GoogleGenAI } from "@google/genai";
+
+// --- CONFIG & CONSTANTS ---
+const API_KEY = process.env.API_KEY;
+const INITIAL_PET_STATE = { hunger: 80, happiness: 80, energy: 80, status: 'NEUTRAL' };
+const STAT_DECAY_AMOUNT = 2;
+const GAME_TICK_INTERVAL_MS = 5000;
+const MAX_STAT = 100;
+const MIN_STAT = 0;
+const FEED_AMOUNT = 20;
+const PLAY_AMOUNT = 20;
+const SLEEP_AMOUNT = 40;
+const ACTION_ENERGY_COST = 10;
+
+// --- DOM ELEMENTS ---
+const petEmojiEl = document.getElementById('pet-emoji');
+const petStatusTextEl = document.getElementById('pet-status-text');
+const hungerBar = document.getElementById('hunger-bar');
+const hungerValue = document.getElementById('hunger-value');
+const happinessBar = document.getElementById('happiness-bar');
+const happinessValue = document.getElementById('happiness-value');
+const energyBar = document.getElementById('energy-bar');
+const energyValue = document.getElementById('energy-value');
+const feedBtn = document.getElementById('feed-btn');
+const playBtn = document.getElementById('play-btn');
+const sleepBtn = document.getElementById('sleep-btn');
+const actionButtonsContainer = document.getElementById('action-buttons');
+const gameOverView = document.getElementById('game-over-view');
+const restartBtn = document.getElementById('restart-btn');
+const chatContainer = document.getElementById('chat-container');
+const chatPlaceholder = document.getElementById('chat-placeholder');
+const chatMessages = document.getElementById('chat-messages');
+const chatForm = document.getElementById('chat-form');
+const chatInput = document.getElementById('chat-input');
+const chatSendBtn = document.getElementById('chat-send-btn');
+
+// --- GAME STATE ---
+let petState = { ...INITIAL_PET_STATE };
+let isGameOver = false;
+let tempStatusActive = false;
+let ai = null;
+
+if (API_KEY) {
+    ai = new GoogleGenAI({ apiKey: API_KEY });
+} else {
+    console.warn("API_KEY environment variable not found. AI features will be disabled.");
+}
+
+// --- PET VISUALS ---
+function getPetVisual(status) {
+    switch (status) {
+        case 'HAPPY': return { emoji: '😄', text: "Feeling great!" };
+        case 'SAD': return { emoji: '😢', text: "I'm not feeling so good..." };
+        case 'SLEEPING': return { emoji: '😴', text: "ZzzZzz..." };
+        case 'EATING': return { emoji: '😋', text: "Om nom nom..." };
+        case 'PLAYING': return { emoji: '🥳', text: "Weee!" };
+        case 'NEUTRAL': return { emoji: '😐', text: "I'm okay." };
+        case 'DEAD': return { emoji: '💀', text: "..." };
+        case 'THINKING': return { emoji: '🤔', text: "Hmm..." };
+        default: return { emoji: '🤖', text: "" };
+    }
+}
+
+// --- RENDER FUNCTION ---
+function render() {
+    // Update Stats
+    hungerBar.style.width = `${petState.hunger}%`;
+    hungerValue.textContent = `${petState.hunger}%`;
+    happinessBar.style.width = `${petState.happiness}%`;
+    happinessValue.textContent = `${petState.happiness}%`;
+    energyBar.style.width = `${petState.energy}%`;
+    energyValue.textContent = `${petState.energy}%`;
+
+    // Update Pet Visual
+    const { emoji, text } = getPetVisual(petState.status);
+    petEmojiEl.textContent = emoji;
+    petStatusTextEl.textContent = text;
+    
+    // Update Buttons
+    const isSleeping = petState.status === 'SLEEPING';
+    const isBusy = tempStatusActive || isSleeping;
+    
+    feedBtn.disabled = isBusy || isGameOver;
+    playBtn.disabled = isBusy || isGameOver;
+    sleepBtn.disabled = tempStatusActive || isGameOver;
+
+    if (isSleeping) {
+        sleepBtn.textContent = 'Wake Up';
+        sleepBtn.classList.remove('bg-purple-600', 'hover:bg-purple-500');
+        sleepBtn.classList.add('bg-purple-400', 'hover:bg-purple-300');
+    } else {
+        sleepBtn.textContent = 'Sleep';
+        sleepBtn.classList.remove('bg-purple-400', 'hover:bg-purple-300');
+        sleepBtn.classList.add('bg-purple-600', 'hover:bg-purple-500');
+    }
+
+    // Update Chat UI
+    chatInput.disabled = isBusy || isGameOver || !ai;
+    chatSendBtn.disabled = isBusy || isGameOver || !ai;
+    if (!ai) chatInput.placeholder = "API key not set. Chat disabled.";
+    else if (isSleeping) chatInput.placeholder = "Giga is sleeping...";
+    else if(isGameOver) chatInput.placeholder = "The chat is disabled.";
+    else chatInput.placeholder = "Say something...";
+
+
+    // Update Game Over state
+    gameOverView.classList.toggle('hidden', !isGameOver);
+    actionButtonsContainer.classList.toggle('hidden', isGameOver);
+}
+
+// --- GAME LOGIC ---
+function updatePetStatus() {
+    if (petState.status === 'SLEEPING' || tempStatusActive) return;
+
+    if (petState.hunger <= MIN_STAT || petState.happiness <= MIN_STAT) {
+        petState.status = 'DEAD';
+        isGameOver = true;
+    } else if (petState.hunger < 30 || petState.happiness < 30 || petState.energy < 20) {
+        petState.status = 'SAD';
+    } else if (petState.happiness > 80 && petState.hunger > 80) {
+        petState.status = 'HAPPY';
+    } else {
+        petState.status = 'NEUTRAL';
+    }
+}
+
+function handleActionWithStatus(action, tempStatus) {
+    if (isGameOver || petState.status === 'SLEEPING' || tempStatusActive) return;
+    
+    tempStatusActive = true;
+    petState.status = tempStatus;
+    render();
+
+    setTimeout(() => {
+        action();
+        tempStatusActive = false;
+        updatePetStatus();
+        render();
+    }, 1500);
+}
+
+function handleFeed() {
+    handleActionWithStatus(() => {
+        petState.hunger = Math.min(MAX_STAT, petState.hunger + FEED_AMOUNT);
+        petState.happiness = Math.min(MAX_STAT, petState.happiness + 5);
+    }, 'EATING');
+}
+
+function handlePlay() {
+    handleActionWithStatus(() => {
+        petState.happiness = Math.min(MAX_STAT, petState.happiness + PLAY_AMOUNT);
+        petState.energy = Math.max(MIN_STAT, petState.energy - ACTION_ENERGY_COST);
+    }, 'PLAYING');
+}
+
+function handleSleep() {
+    if (isGameOver || tempStatusActive) return;
+    petState.status = petState.status === 'SLEEPING' ? 'NEUTRAL' : 'SLEEPING';
+    updatePetStatus();
+    render();
+}
+
+function handleRestart() {
+    petState = { ...INITIAL_PET_STATE };
+    isGameOver = false;
+    chatMessages.innerHTML = '';
+    chatPlaceholder.classList.remove('hidden');
+    render();
+}
+
+// --- CHAT LOGIC ---
+async function getPetResponse(userMessage) {
+    if (!ai) return "I can't talk right now, my AI brain is disconnected.";
+    const { hunger, happiness, energy, status } = petState;
+  
+    const systemInstruction = `You are a cute digital pet named Giga. Your personality is a bit cheeky and playful. 
+    Your responses must be short (1-2 sentences) and reflect your current needs. 
+    Do not use markdown, emojis, or complex formatting. Just return plain text.
+    If you are sad, sound grumpy. If you are happy, sound cheerful. If you are tired, sound sleepy.`;
+
+    const prompt = `My current stats are: Hunger: ${hunger}/100, Happiness: ${happiness}/100, Energy: ${energy}/100, Status: ${status}.
+    The user said to me: "${userMessage}".
+    What is my reply?`;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash-preview-04-17",
+            contents: prompt,
+            config: {
+                systemInstruction: systemInstruction,
+                temperature: 0.9,
+                topK: 1,
+                topP: 1,
+                thinkingConfig: { thinkingBudget: 0 }
+            }
+        });
+        return response.text;
+    } catch (error) {
+        console.error("Error fetching response from Gemini:", error);
+        return "I... I don't feel like talking right now. Something's wrong.";
+    }
+}
+
+function addMessageToChat(sender, text) {
+    chatPlaceholder.classList.add('hidden');
+    const messageWrapper = document.createElement('div');
+    messageWrapper.className = `flex items-end gap-2 ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
+
+    let messageContent = '';
+    if (sender === 'pet') {
+        messageContent += `<div class="w-8 h-8 rounded-full bg-cyan-500 flex items-center justify-center text-lg flex-shrink-0">🤖</div>`;
+    }
+    
+    messageContent += `<div class="max-w-xs md:max-w-sm lg:max-w-md px-4 py-2 rounded-2xl ${sender === 'user' ? 'bg-blue-600 rounded-br-none' : 'bg-slate-700 rounded-bl-none'}"><p class="text-white font-sans">${text}</p></div>`;
+    
+    messageWrapper.innerHTML = messageContent;
+    chatMessages.appendChild(messageWrapper);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+function showTypingIndicator() {
+    chatPlaceholder.classList.add('hidden');
+    const indicatorHTML = `
+        <div id="typing-indicator" class="flex items-end gap-2 justify-start">
+            <div class="w-8 h-8 rounded-full bg-cyan-500 flex items-center justify-center text-lg flex-shrink-0">🤖</div>
+            <div class="max-w-xs md:max-w-sm lg:max-w-md px-4 py-2 rounded-2xl bg-slate-700 rounded-bl-none">
+                <div class="flex items-center space-x-1">
+                    <span class="w-2 h-2 bg-slate-400 rounded-full animate-pulse_1"></span>
+                    <span class="w-2 h-2 bg-slate-400 rounded-full animate-pulse_2"></span>
+                    <span class="w-2 h-2 bg-slate-400 rounded-full animate-pulse_3"></span>
+                </div>
+            </div>
+        </div>
+    `;
+    chatMessages.insertAdjacentHTML('beforeend', indicatorHTML);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+function removeTypingIndicator() {
+    const indicator = document.getElementById('typing-indicator');
+    if (indicator) {
+        indicator.remove();
+    }
+}
+
+async function handleSendMessage(e) {
+    e.preventDefault();
+    const userInput = chatInput.value.trim();
+    if (!userInput || tempStatusActive || isGameOver || petState.status === 'SLEEPING') return;
+
+    addMessageToChat('user', userInput);
+    chatInput.value = '';
+    
+    tempStatusActive = true;
+    petState.status = 'THINKING';
+    render();
+    showTypingIndicator();
+
+    const responseText = await getPetResponse(userInput);
+
+    removeTypingIndicator();
+    addMessageToChat('pet', responseText);
+    tempStatusActive = false;
+    updatePetStatus();
+    render();
+}
+
+// --- INITIALIZATION & GAME LOOP ---
+function startGame() {
+    // Add event listeners
+    feedBtn.addEventListener('click', handleFeed);
+    playBtn.addEventListener('click', handlePlay);
+    sleepBtn.addEventListener('click', handleSleep);
+    restartBtn.addEventListener('click', handleRestart);
+    chatForm.addEventListener('submit', handleSendMessage);
+    
+    // Start game loop
+    setInterval(() => {
+        if (isGameOver) return;
+
+        if (petState.status === 'SLEEPING') {
+            petState.energy = Math.min(MAX_STAT, petState.energy + STAT_DECAY_AMOUNT * 2);
+        } else {
+            petState.hunger = Math.max(MIN_STAT, petState.hunger - STAT_DECAY_AMOUNT);
+            petState.happiness = Math.max(MIN_STAT, petState.happiness - STAT_DECAY_AMOUNT);
+            petState.energy = Math.max(MIN_STAT, petState.energy - Math.round(STAT_DECAY_AMOUNT / 2));
+        }
+        
+        updatePetStatus();
+        render();
+
+    }, GAME_TICK_INTERVAL_MS);
+    
+    render();
+}
+
+startGame();
+
+</script>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>
