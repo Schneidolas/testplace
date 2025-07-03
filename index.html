@@ -1,418 +1,788 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GigaPet AI</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>GigaPet AI - My Waifu</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
+      :root {
+          --black: #0f380f;
+          --dark: #306230;
+          --medium: #8bac0f;
+          --light: #9bbc0f;
+          --char-shadow: rgba(0,0,0,0.15);
+          --ai-action-color: #7b2cbf;
+      }
+      *, *::before, *::after { box-sizing: border-box; }
       body {
-        font-family: 'Roboto Mono', monospace;
+          font-family: 'Press Start 2P', cursive;
+          background: #222;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 100vh;
+          margin: 0;
+          overflow: hidden;
+          color: var(--light);
       }
-      .font-pixel {
-        font-family: 'Press Start 2P', cursive;
+      .hidden { display: none !important; }
+      .app-wrapper {
+          width: 800px;
+          background: #2c3e50;
+          border-radius: 10px;
+          box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+          padding: 15px;
+          display: flex;
+          flex-direction: column;
       }
-      .hidden {
-        display: none;
+      .app-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 10px 20px;
+          background: var(--black);
+          border-radius: 5px;
+          margin-bottom: 15px;
+          font-size: 14px;
+          flex-wrap: wrap;
       }
-       @keyframes pulse_1 { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-      .animate-pulse_1 { animation: pulse_1 1s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-      .animate-pulse_2 { animation: pulse_1 1s cubic-bezier(0.4, 0, 0.6, 1) 0.2s infinite; }
-      .animate-pulse_3 { animation: pulse_1 1s cubic-bezier(0.4, 0, 0.6, 1) 0.4s infinite; }
+      .header-info { display: flex; flex-direction: column; gap: 4px; }
+      .personality-display { color: var(--medium); font-size: 12px; }
+      .game-container {
+          background: var(--black);
+          border: 4px solid var(--dark);
+          border-radius: 5px;
+          padding: 8px;
+          position: relative;
+          display: flex;
+          flex-direction: column;
+      }
+      .screen {
+          background-color: var(--light);
+          width: 100%;
+          height: 450px;
+          position: relative;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-end;
+          background-repeat: no-repeat;
+          background-size: cover;
+          background-position: center bottom;
+          transition: background-color 2s linear;
+          border: 2px solid var(--dark);
+      }
+      .controls {
+          background: var(--dark);
+          padding-top: 8px;
+          margin: 8px -8px -8px -8px;
+          border-radius: 0 0 5px 5px;
+          border-top: 2px solid var(--black);
+      }
+      .stats-container { display: flex; justify-content: space-around; padding: 0 8px; }
+      .status-bar-container { width: 30%; }
+      .status-label { font-size: 12px; color: var(--light); margin: 0 0 4px; text-align: center; }
+      .progress-bar-outline { background: var(--black); padding: 2px; height: 12px; border-radius: 4px; }
+      .progress-bar-fill { background: var(--medium); height: 100%; border-radius: 2px; transition: width 0.5s ease; }
+      .actions-container { display: flex; flex-wrap: wrap; justify-content: center; padding: 10px; gap: 10px; min-height: 80px; }
+      .action-btn {
+          font-family: inherit;
+          font-size: 14px;
+          background: var(--medium);
+          color: var(--black);
+          border: none;
+          border-radius: 5px;
+          padding: 12px;
+          cursor: pointer;
+          flex-grow: 1;
+          text-align: center;
+          min-width: 150px;
+          border-bottom: 3px solid var(--dark);
+      }
+      .action-btn:disabled { background: #5a7409; color: #306230; cursor: not-allowed; }
+      .action-btn:active:not(:disabled) { transform: translateY(2px); border-bottom-width: 1px; }
+      .file-upload-label { display: inline-block; text-align: center; cursor: pointer; }
+      .affection-status { font-size: 14px; text-align: center; padding: 8px 0; }
+      .affection-tier-name { color: var(--medium); font-weight: bold; }
+      .character {
+          position: absolute;
+          bottom: 30px;
+          left: 50%;
+          transform: translateX(0px);
+          transform-origin: center bottom;
+          z-index: 5;
+          width: 96px;
+          margin-left: -48px;
+      }
+      @keyframes walking-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+      .character.walking .character-bob { animation: walking-bob 0.5s ease-in-out infinite; }
+      .character-bob { position: relative; transform-origin: center bottom; }
+      .character-shadow {
+          width: 80px; height: 15px; background: var(--char-shadow);
+          border-radius: 50%; position: absolute; bottom: -5px;
+          left: 50%; transform: translateX(-50%);
+      }
+      .character-sprite { width: 100%; height: 160px; position: relative; }
+      .character-image { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
+      .speech-bubble {
+          position: absolute; bottom: 180px; left: 50%; transform: translateX(-50%);
+          background: white; color: black; padding: 12px 18px; border-radius: 10px;
+          font-size: 14px; z-index: 20; max-width: 90%; text-align: center;
+          border: 3px solid var(--black); box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+          opacity: 0; visibility: hidden; transition: all 0.2s;
+      }
+      .speech-bubble.visible { opacity: 1; visibility: visible; }
+      .speech-bubble::after {
+          content: ''; position: absolute; bottom: -12px; left: 50%;
+          transform: translateX(-50%); border-width: 13px 13px 0; border-style: solid;
+          border-color: white transparent; display: block; width: 0;
+          filter: drop-shadow(0 2px 1px rgba(0,0,0,0.1));
+      }
+      .interaction-popup {
+          position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+          background: rgba(15, 56, 15, 0.9); padding: 10px 15px; border-radius: 5px;
+          font-size: 14px; z-index: 25; text-align: center;
+          animation: fadeIn 0.3s, fadeOut 0.3s 2.7s;
+      }
+      @keyframes fadeIn { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
+      @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+      .cutscene-overlay {
+          position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+          background: rgba(0,0,0,0.8); z-index: 30; animation: fadeIn 2s;
+      }
+      .game-over-overlay {
+          position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+          background: rgba(0,0,0,0.8); z-index: 50; display: flex; align-items: center; justify-content: center;
+      }
+      .game-over-box {
+          background: var(--light); color: var(--black); padding: 25px; border-radius: 5px;
+          text-align: center; border: 3px solid var(--black);
+      }
+      .game-over-box h2 { font-size: 24px; margin: 0 0 10px; }
+      .game-over-box p { font-size: 14px; margin: 0 0 20px; max-width: 300px; }
+      .anim-hunger .character-bob { animation: convulse 0.2s infinite; }
+      @keyframes convulse {
+          0%, 100% { transform: translate(0, 0) rotate(0); }
+          25% { transform: translate(-2px, 0) rotate(-3deg); }
+          75% { transform: translate(2px, 0) rotate(3deg); }
+      }
+      .anim-sadness .character-bob { animation: hang-sway 4s ease-in-out infinite; }
+      .rope {
+          position: absolute; top: -40px; left: 50%; width: 2px;
+          height: 40px; background: #8B4513; transform: translateX(-50%);
+      }
+      @keyframes hang-sway { 0%, 100% { transform: rotate(5deg); } 50% { transform: rotate(-5deg); } }
+      .action-info-text { text-align: center; width: 100%; font-size: 14px; padding: 15px 0; }
+      .wide-btn { flex-basis: 100% !important; flex-grow: 1 !important; }
     </style>
-    <script type="importmap">
-{
-  "imports": {
-    "@google/genai": "https://esm.sh/@google/genai@^0.15.0",
-    "react": "https://esm.sh/react@^19.1.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
-    "react/": "https://esm.sh/react@^19.1.0/"
-  }
-}
-</script>
 <link rel="stylesheet" href="/index.css">
 </head>
-<body class="bg-slate-900 text-white">
-    <div id="app-container" class="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-4 text-white font-pixel">
-      <div class="w-full max-w-4xl mx-auto flex flex-col lg:flex-row gap-8">
-        
-        <!-- Left Panel: Pet & Stats -->
-        <div class="lg:w-1/2 bg-slate-800/50 p-6 rounded-2xl shadow-lg border border-slate-700 backdrop-blur-sm">
-          <h1 class="text-4xl text-cyan-300 mb-4 text-center">GigaPet AI</h1>
-          
-          <div id="pet-display" class="flex flex-col items-center justify-center bg-slate-700/50 p-8 rounded-lg my-4 border border-slate-600">
-            <div id="pet-emoji" class="text-8xl mb-4 transition-transform duration-500 ease-in-out transform scale-100 hover:scale-110">😐</div>
-            <p id="pet-status-text" class="text-xl text-cyan-300 h-6">I'm okay.</p>
-          </div>
-          
-          <div class="space-y-4 mt-6">
-            <div>
-              <div class="flex justify-between items-center mb-1">
-                <span class="text-sm uppercase tracking-wider">Hunger</span>
-                <span id="hunger-value" class="text-sm font-bold">80%</span>
-              </div>
-              <div class="w-full bg-slate-700 rounded-full h-4 border-2 border-slate-600">
-                <div id="hunger-bar" class="bg-yellow-500 h-full rounded-full transition-all duration-500 ease-out" style="width: 80%;"></div>
-              </div>
+<body>
+    <div id="app-wrapper" class="app-wrapper">
+        <header id="app-header" class="app-header">
+            <div class="header-info">
+              <div id="location-display" class="location-display"></div>
+              <div id="personality-display" class="personality-display"></div>
             </div>
-            <div>
-              <div class="flex justify-between items-center mb-1">
-                <span class="text-sm uppercase tracking-wider">Happiness</span>
-                <span id="happiness-value" class="text-sm font-bold">80%</span>
-              </div>
-              <div class="w-full bg-slate-700 rounded-full h-4 border-2 border-slate-600">
-                <div id="happiness-bar" class="bg-green-500 h-full rounded-full transition-all duration-500 ease-out" style="width: 80%;"></div>
-              </div>
-            </div>
-            <div>
-              <div class="flex justify-between items-center mb-1">
-                <span class="text-sm uppercase tracking-wider">Energy</span>
-                <span id="energy-value" class="text-sm font-bold">80%</span>
-              </div>
-              <div class="w-full bg-slate-700 rounded-full h-4 border-2 border-slate-600">
-                <div id="energy-bar" class="bg-blue-500 h-full rounded-full transition-all duration-500 ease-out" style="width: 80%;"></div>
-              </div>
-            </div>
-          </div>
-
-          <div id="action-buttons" class="grid grid-cols-3 gap-3 mt-6">
-            <button id="feed-btn" class="w-full text-center py-3 px-4 rounded-lg font-bold transition-all duration-200 ease-in-out transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none bg-yellow-500 hover:bg-yellow-400 text-slate-900">Feed</button>
-            <button id="play-btn" class="w-full text-center py-3 px-4 rounded-lg font-bold transition-all duration-200 ease-in-out transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none bg-green-500 hover:bg-green-400 text-slate-900">Play</button>
-            <button id="sleep-btn" class="w-full text-center py-3 px-4 rounded-lg font-bold transition-all duration-200 ease-in-out transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none bg-purple-600 hover:bg-purple-500 text-white">Sleep</button>
-          </div>
-
-          <div id="game-over-view" class="text-center mt-6 hidden">
-              <p class="text-red-500 text-2xl mb-4">Game Over!</p>
-              <button id="restart-btn" class="bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-bold py-2 px-4 rounded-lg transition-colors">Restart</button>
-          </div>
-        </div>
-
-        <!-- Right Panel: Chat -->
-        <div class="lg:w-1/2 bg-slate-800/50 p-6 rounded-2xl shadow-lg border border-slate-700 backdrop-blur-sm flex flex-col">
-          <h2 class="text-2xl text-cyan-300 mb-4 text-center font-pixel">Chat with Giga</h2>
-            <div id="chat-container" class="flex-grow bg-slate-900/70 rounded-lg p-4 overflow-y-auto mb-4 border border-slate-700 min-h-[300px]">
-                <div id="chat-placeholder" class="flex items-center justify-center h-full text-slate-400">
-                    Say something to your pet!
+            <div id="time-display" class="time-display"></div>
+        </header>
+        <div class="game-container">
+            <div id="cutscene-overlay" class="cutscene-overlay hidden"></div>
+            <div id="game-over-overlay" class="game-over-overlay hidden">
+                <div class="game-over-box">
+                    <h2 id="game-over-title">Fim de Jogo</h2>
+                    <p id="game-over-message"></p>
+                    <button id="restart-btn" class="action-btn">Reiniciar</button>
                 </div>
-                <div id="chat-messages" class="space-y-4"></div>
             </div>
-            <form id="chat-form" class="flex gap-2">
-                <input id="chat-input" type="text" placeholder="Say something..." class="flex-grow bg-slate-700 border border-slate-600 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-all disabled:opacity-50 font-sans" />
-                <button id="chat-send-btn" type="submit" class="bg-cyan-500 text-slate-900 font-bold px-6 py-3 rounded-lg hover:bg-cyan-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                    Send
-                </button>
-            </form>
+            <div id="screen" class="screen">
+                <div id="interaction-popup" class="interaction-popup hidden"></div>
+                <div id="speech-bubble" class="speech-bubble"></div>
+                <div id="character" class="character">
+                    <div id="character-bob" class="character-bob">
+                        <div class="character-shadow"></div>
+                        <div class="character-sprite">
+                            <div id="rope" class="rope hidden"></div>
+                            <img id="character-image" src="./character.png" alt="Character" class="character-image" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="controls">
+                <div class="stats-container">
+                    <div class="status-bar-container">
+                        <p class="status-label">Humor</p>
+                        <div class="progress-bar-outline">
+                            <div id="mood-bar" class="progress-bar-fill"></div>
+                        </div>
+                    </div>
+                    <div class="status-bar-container">
+                        <p class="status-label">Fome</p>
+                        <div class="progress-bar-outline">
+                            <div id="hunger-bar" class="progress-bar-fill"></div>
+                        </div>
+                    </div>
+                    <div class="status-bar-container">
+                        <p class="status-label">Higiene</p>
+                        <div class="progress-bar-outline">
+                            <div id="hygiene-bar" class="progress-bar-fill"></div>
+                        </div>
+                    </div>
+                </div>
+                <div id="affection-status" class="affection-status"></div>
+                <div id="actions-container" class="actions-container"></div>
+            </div>
         </div>
-
-      </div>
-       <footer class="text-center mt-8 text-slate-500 text-sm font-sans">
-        <p>A Tamagotchi-inspired game using vanilla JS & Gemini AI.</p>
-        <p>Your chat history is not saved. Refreshing will restart your conversation.</p>
-      </footer>
     </div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
 
-<script type="module">
-import { GoogleGenAI } from "@google/genai";
+// --- CONSTANTS, TYPES & DATA ---
+const SAVE_KEY = 'gemochi_save_v2';
+const STAT_MAX = 100;
+const STAT_DECAY_RATE = 1;
+const DECAY_INTERVAL = 6000;
+const DEATH_TIMER_DURATION = 30000;
+const TIME_SPEED_MULTIPLIER = 20;
 
-// --- CONFIG & CONSTANTS ---
-const API_KEY = process.env.API_KEY;
-const INITIAL_PET_STATE = { hunger: 80, happiness: 80, energy: 80, status: 'NEUTRAL' };
-const STAT_DECAY_AMOUNT = 2;
-const GAME_TICK_INTERVAL_MS = 5000;
-const MAX_STAT = 100;
-const MIN_STAT = 0;
-const FEED_AMOUNT = 20;
-const PLAY_AMOUNT = 20;
-const SLEEP_AMOUNT = 40;
-const ACTION_ENERGY_COST = 10;
+const FEMALE_NAMES = ["Lia", "Pixel", "Nina", "Gabi", "Tete", "Carol", "Emi", "Flora", "Maya", "Yuki"];
+const PERSONALITIES = ['TIMIDA', 'CALADA', 'IMPULSIVA', 'BOCA_SUJA', 'FOFA', 'MALANDRA', 'PIADISTA', 'SAFADA', 'BAGUNCEIRA', 'NORMAL', 'MENTE_FECHADA'];
+const PERSONALITY_NAMES = {
+    TIMIDA: "Tímida", CALADA: "Calada", IMPULSIVA: "Impulsiva", BOCA_SUJA: "Boca Suja",
+    FOFA: "Fofa", MALANDRA: "Malandra", PIADISTA: "Piadista", SAFADA: "Safada",
+    BAGUNCEIRA: "Bagunceira", NORMAL: "Normal", MENTE_FECHADA: "Mente Fechada"
+};
+
+const AFFECTION_TIERS = {
+    PSYCHOPATH:   { min: -Infinity, max: -81, name: 'Psicopata' },
+    HATE:         { min: -80, max: -41, name: 'Ódio' },
+    ENMITY:       { min: -40, max: -11, name: 'Inimizade' },
+    UNKNOWN:      { min: -10, max: 10,  name: 'Desconhecida' },
+    ACQUAINTANCE: { min: 11,  max: 30,  name: 'Conhecida' },
+    FRIEND:       { min: 31,  max: 60,  name: 'Amiga' },
+    BEST_FRIEND:  { min: 61,  max: 90,  name: 'Melhor Amiga' },
+    GIRLFRIEND:   { min: 91,  max: 150, name: 'Namorada' },
+    WIFE:         { min: 151, max: Infinity, name: 'Esposa' },
+};
+
+const LOCATION_NAMES = {
+    QUARTO: 'Quarto', SALA_DE_ESTAR: 'Sala de Estar', COZINHA: 'Cozinha', BANHEIRO: 'Banheiro',
+    QUINTAL: 'Quintal', SORVETERIA: 'Sorveteria', SHOPPING: 'Shopping', BOLICHE: 'Boliche',
+};
+
+const LOCATION_BACKGROUNDS = {
+    SALA_DE_ESTAR: 'https://i.imgur.com/v83F41j.png', // Living Room
+    QUARTO: 'https://i.imgur.com/eBwSj3d.png',      // Bedroom
+    COZINHA: 'https://i.imgur.com/iC5e3sv.png',       // Kitchen
+    BANHEIRO: 'https://i.imgur.com/jPBsHgr.png',     // Bathroom
+    QUINTAL: 'https://i.imgur.com/2s3D3sA.png',       // Backyard
+    SORVETERIA: 'https://i.imgur.com/eBwZ8r2.png',
+    SHOPPING: 'https://i.imgur.com/bT6nB6j.png',
+    BOLICHE: 'https://i.imgur.com/sSgWnFf.png',
+};
+
+const PROPOSAL_DIALOGUE = {
+    petText: "Eu... preciso te dizer algo. Sinto que o que temos é mais que amizade. Você... quer namorar comigo?",
+    isProposal: true, positiveResponse: { text: "Sim! Eu quero!", moodEffect: 50 }, negativeResponse: { text: "Desculpe, não sinto o mesmo.", moodEffect: -50 },
+};
+
+const MARRIAGE_PROPOSAL_DIALOGUE = {
+    petText: "Meu amor... eu não consigo mais imaginar um futuro que não seja com você nele. Você... aceita se casar comigo?",
+    isProposal: true, isMarriage: true, positiveResponse: { text: "Sim, mil vezes sim!" }, negativeResponse: { text: "Eu... não posso." }
+};
+
+
+// --- DIALOGUE DATABASE GENERATION ---
+const DIALOGUE_MATRIX = {
+    NORMAL: {
+        UNKNOWN: { pet: ["O dia está meio {adj}.", "Pensando no que fazer hoje...", "Às vezes o silêncio é bom, né?"], pos: ["Concordo.", "Tenho umas ideias.", "Sim, é relaxante."], neg: ["Achei normal.", "Sei lá.", "Detesto silêncio."], fragments: { adj: ['parado', 'estranho', 'calmo'] } },
+        FRIEND: { pet: ["Se a gente tivesse um super poder, qual seria o mais inútil?", "Qual a sua opinião sobre {topic}?", "Lembra daquela vez que a gente {memory}?"], pos: ["Controlar a cor do céu.", "Acho uma loucura.", "Como esquecer!"], neg: ["Não sei.", "Tanto faz.", "Não lembro disso."], fragments: { topic: ['abacaxi na pizza', 'gatos dominando o mundo'], memory: ['tentou cozinhar e queimou tudo', 'riu até a barriga doer'] } },
+        GIRLFRIEND: { pet: ["Pensei na gente hoje.", "Saudades de você, mesmo estando aqui do lado.", "Você me faz tão bem."], pos: ["Eu também pensei em nós.", "Own, que fofo.", "Você também me faz bem."], neg: ["Que legal.", "Que exagero.", "Ok."] }
+    },
+    FOFA: {
+        UNKNOWN: { pet: ["O-oi... {emote}", "O dia está bonito hoje, né?", "Espero... não estar incomodando..."], pos: ["Oi! Tudo bem?", "Sim, está lindo.", "Você nunca incomoda."], neg: ["Oi.", "Tanto faz.", "Está sim."], fragments: { emote: ['(⁄ ⁄>⁄ ▽ ⁄<⁄ ⁄)', '(´｡• ᵕ •｡`)', '(*^.^*)'] } },
+        FRIEND: { pet: ["Vamos ver um filme bem bobinho e comer pipoca até a barriga doer?", "E se a gente fizesse uma cabana de cobertores aqui na sala?", "Me conta um segredo seu? Eu conto um meu! {emote}"], pos: ["Amei a ideia!", "SÓ VAMOS!", "Claro, pode começar."], neg: ["Prefiro outra coisa.", "Que bagunça...", "Melhor não."], fragments: { emote: ['(o´▽`o)', '(^w^)', '(*≧▽≦)'] } },
+    },
+    BOCA_SUJA: {
+        UNKNOWN: { pet: ["E aí, porra. Tá olhando o quê?", "Que saco, nada pra fazer nessa merda.", "Fala logo o que tu quer."], pos: ["Admirando a paisagem.", "A gente inventa algo.", "Calma, porra."], neg: ["Perdi meu tempo.", "A culpa é sua.", "Não te devo satisfação."] },
+        HATE: { pet: ["Some da minha frente, caralho.", "Não enche meu saco, vai se foder.", "Encosta em mim de novo e eu quebro sua cara."], pos: ["Ok, tô indo.", "Foi mal.", "Credo, pra que isso?"], neg: ["Me obrigue.", "O problema é seu.", "Tenta a sorte, otário."]},
+    }
+};
+
+let dialogueDatabase = {};
+
+function getRandom(arr) {
+    if (!arr || arr.length === 0) return '';
+    return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function createDialogueSet(count, petTemplates, posTemplates, negTemplates, fragments = {}) {
+    const dialogues = [];
+    if (!petTemplates || petTemplates.length === 0) return [{ petText: '...', positiveResponse: { text: 'Ok.' }, negativeResponse: { text: '...' } }];
+    
+    for (let i = 0; i < count; i++) {
+        let petText = getRandom(petTemplates);
+        for (const key in fragments) {
+            if (petText.includes(`{${key}}`)) {
+                petText = petText.replace(new RegExp(`{${key}}`, 'g'), getRandom(fragments[key]));
+            }
+        }
+        dialogues.push({
+            petText: petText,
+            positiveResponse: { text: getRandom(posTemplates), moodEffect: 10, affectionEffect: 2 },
+            negativeResponse: { text: getRandom(negTemplates), moodEffect: -10, affectionEffect: -2 },
+        });
+    }
+    return dialogues;
+}
+
+function buildFullDatabase() {
+    const finalDb = {};
+    const tiers = Object.keys(AFFECTION_TIERS);
+
+    for (const p of PERSONALITIES) {
+        finalDb[p] = {};
+        for (const t of tiers) {
+            const personalityMatrix = DIALOGUE_MATRIX[p] || DIALOGUE_MATRIX.NORMAL;
+            const affectionMatrix = personalityMatrix[t] || personalityMatrix.UNKNOWN || DIALOGUE_MATRIX.NORMAL.UNKNOWN;
+            
+            finalDb[p][t] = createDialogueSet(50, affectionMatrix.pet, affectionMatrix.pos, affectionMatrix.neg, affectionMatrix.fragments);
+        }
+    }
+    return finalDb;
+}
+
 
 // --- DOM ELEMENTS ---
-const petEmojiEl = document.getElementById('pet-emoji');
-const petStatusTextEl = document.getElementById('pet-status-text');
-const hungerBar = document.getElementById('hunger-bar');
-const hungerValue = document.getElementById('hunger-value');
-const happinessBar = document.getElementById('happiness-bar');
-const happinessValue = document.getElementById('happiness-value');
-const energyBar = document.getElementById('energy-bar');
-const energyValue = document.getElementById('energy-value');
-const feedBtn = document.getElementById('feed-btn');
-const playBtn = document.getElementById('play-btn');
-const sleepBtn = document.getElementById('sleep-btn');
-const actionButtonsContainer = document.getElementById('action-buttons');
-const gameOverView = document.getElementById('game-over-view');
-const restartBtn = document.getElementById('restart-btn');
-const chatContainer = document.getElementById('chat-container');
-const chatPlaceholder = document.getElementById('chat-placeholder');
-const chatMessages = document.getElementById('chat-messages');
-const chatForm = document.getElementById('chat-form');
-const chatInput = document.getElementById('chat-input');
-const chatSendBtn = document.getElementById('chat-send-btn');
-
-// --- GAME STATE ---
-let petState = { ...INITIAL_PET_STATE };
-let isGameOver = false;
-let tempStatusActive = false;
-let ai = null;
-
-if (API_KEY) {
-    ai = new GoogleGenAI({ apiKey: API_KEY });
-} else {
-    console.warn("API_KEY environment variable not found. AI features will be disabled.");
-}
-
-// --- PET VISUALS ---
-function getPetVisual(status) {
-    switch (status) {
-        case 'HAPPY': return { emoji: '😄', text: "Feeling great!" };
-        case 'SAD': return { emoji: '😢', text: "I'm not feeling so good..." };
-        case 'SLEEPING': return { emoji: '😴', text: "ZzzZzz..." };
-        case 'EATING': return { emoji: '😋', text: "Om nom nom..." };
-        case 'PLAYING': return { emoji: '🥳', text: "Weee!" };
-        case 'NEUTRAL': return { emoji: '😐', text: "I'm okay." };
-        case 'DEAD': return { emoji: '💀', text: "..." };
-        case 'THINKING': return { emoji: '🤔', text: "Hmm..." };
-        default: return { emoji: '🤖', text: "" };
+const dom = {
+    appWrapper: document.getElementById('app-wrapper'),
+    header: {
+        location: document.getElementById('location-display'),
+        personality: document.getElementById('personality-display'),
+        time: document.getElementById('time-display'),
+    },
+    screen: document.getElementById('screen'),
+    overlays: {
+        cutscene: document.getElementById('cutscene-overlay'),
+        gameOver: document.getElementById('game-over-overlay'),
+        gameOverMsg: document.getElementById('game-over-message'),
+        restartBtn: document.getElementById('restart-btn'),
+    },
+    character: {
+        container: document.getElementById('character'),
+        bob: document.getElementById('character-bob'),
+        image: document.getElementById('character-image'),
+        rope: document.getElementById('rope'),
+    },
+    ui: {
+        speechBubble: document.getElementById('speech-bubble'),
+        interactionPopup: document.getElementById('interaction-popup'),
+        moodBar: document.getElementById('mood-bar'),
+        hungerBar: document.getElementById('hunger-bar'),
+        hygieneBar: document.getElementById('hygiene-bar'),
+        affectionStatus: document.getElementById('affection-status'),
+        actionsContainer: document.getElementById('actions-container'),
     }
+};
+
+
+// --- GAME STATE & LOGIC ---
+let gameState = {};
+let gameIntervals = { clock: null, decay: null, movement: null, death: null };
+let interactionTimeout = null;
+
+function saveState() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(gameState)); } catch (e) { console.warn("Failed to save state.", e); } }
+function loadState() { try { const saved = localStorage.getItem(SAVE_KEY); return saved ? JSON.parse(saved) : null; } catch (e) { console.warn("Failed to load state.", e); return null; } }
+
+function createNewGame() {
+    const personality = getRandom(PERSONALITIES);
+    return {
+        name: getRandom(FEMALE_NAMES),
+        personality: personality,
+        personalityName: PERSONALITY_NAMES[personality],
+        characterImageUrl: './character.png',
+        mood: 80, hunger: 80, hygiene: 80,
+        affection: 0,
+        isAlive: true,
+        deathType: null,
+        gameTime: { year: 1, month: 1, day: 1, hour: 8, minute: 0 },
+        zeroHungerTime: null,
+        zeroMoodTime: null,
+        currentLocation: 'QUARTO',
+        view: 'HOME',
+        isTalking: false,
+        isWalking: false,
+        facingDirection: 'right',
+        transitionDuration: '0s',
+        charPositionX: 0,
+        currentDialogue: null,
+    };
 }
 
-// --- RENDER FUNCTION ---
+function getAffectionTier(affection) {
+    for (const key in AFFECTION_TIERS) {
+        if (affection >= AFFECTION_TIERS[key].min && affection <= AFFECTION_TIERS[key].max) return key;
+    }
+    return 'UNKNOWN';
+}
+
+function showInteractionMessage(text, duration = 2000) {
+    dom.ui.interactionPopup.textContent = text;
+    dom.ui.interactionPopup.classList.remove('hidden');
+    if (interactionTimeout) clearTimeout(interactionTimeout);
+    interactionTimeout = setTimeout(() => dom.ui.interactionPopup.classList.add('hidden'), duration);
+}
+
+// --- RENDER ---
 function render() {
-    // Update Stats
-    hungerBar.style.width = `${petState.hunger}%`;
-    hungerValue.textContent = `${petState.hunger}%`;
-    happinessBar.style.width = `${petState.happiness}%`;
-    happinessValue.textContent = `${petState.happiness}%`;
-    energyBar.style.width = `${petState.energy}%`;
-    energyValue.textContent = `${petState.energy}%`;
+    if (!gameState || Object.keys(gameState).length === 0) return;
 
-    // Update Pet Visual
-    const { emoji, text } = getPetVisual(petState.status);
-    petEmojiEl.textContent = emoji;
-    petStatusTextEl.textContent = text;
+    // Time & Location
+    const time = gameState.gameTime;
+    dom.header.time.textContent = `D${time.day}/${time.month} - ${String(time.hour).padStart(2, '0')}:${String(time.minute).padStart(2, '0')}`;
+    dom.header.location.textContent = `${gameState.name} em ${LOCATION_NAMES[gameState.currentLocation]}`;
+    dom.header.personality.textContent = `Personalidade: ${gameState.personalityName}`;
+
+    // Screen background & sky color
+    dom.screen.style.backgroundImage = `url(${LOCATION_BACKGROUNDS[gameState.currentLocation]})`;
+    const hour = gameState.gameTime.hour;
+    let skyColor = 'rgba(0,0,0,0)';
+    if (hour < 7) skyColor = 'rgba(15, 56, 15, 0.5)';
+    else if (hour < 8) skyColor = 'rgba(255, 147, 41, 0.2)';
+    else if (hour < 18) skyColor = 'rgba(0,0,0,0)';
+    else if (hour < 20) skyColor = 'rgba(255, 147, 41, 0.3)';
+    else if (hour < 22) skyColor = 'rgba(23, 76, 133, 0.4)';
+    else skyColor = 'rgba(15, 56, 15, 0.5)';
+    dom.screen.style.backgroundColor = skyColor;
     
-    // Update Buttons
-    const isSleeping = petState.status === 'SLEEPING';
-    const isBusy = tempStatusActive || isSleeping;
+    // Character
+    dom.character.image.src = gameState.characterImageUrl;
+    dom.character.container.style.transition = `transform ${gameState.transitionDuration} linear`;
+    dom.character.container.style.transform = `translateX(${gameState.charPositionX}px) scaleX(${gameState.facingDirection === 'right' ? 1 : -1})`;
+    dom.character.container.classList.toggle('walking', gameState.isWalking);
     
-    feedBtn.disabled = isBusy || isGameOver;
-    playBtn.disabled = isBusy || isGameOver;
-    sleepBtn.disabled = tempStatusActive || isGameOver;
+    // Stats
+    dom.ui.moodBar.style.width = `${gameState.mood}%`;
+    dom.ui.hungerBar.style.width = `${gameState.hunger}%`;
+    dom.ui.hygieneBar.style.width = `${gameState.hygiene}%`;
+    const affectionTierName = AFFECTION_TIERS[getAffectionTier(gameState.affection)].name;
+    dom.ui.affectionStatus.innerHTML = `Afeto: <span class="affection-tier-name">${affectionTierName}</span>`;
 
-    if (isSleeping) {
-        sleepBtn.textContent = 'Wake Up';
-        sleepBtn.classList.remove('bg-purple-600', 'hover:bg-purple-500');
-        sleepBtn.classList.add('bg-purple-400', 'hover:bg-purple-300');
-    } else {
-        sleepBtn.textContent = 'Sleep';
-        sleepBtn.classList.remove('bg-purple-400', 'hover:bg-purple-300');
-        sleepBtn.classList.add('bg-purple-600', 'hover:bg-purple-500');
-    }
+    // Dialogue
+    dom.ui.speechBubble.classList.toggle('visible', gameState.isTalking);
+    if(gameState.isTalking) dom.ui.speechBubble.textContent = gameState.currentDialogue.petText;
 
-    // Update Chat UI
-    chatInput.disabled = isBusy || isGameOver || !ai;
-    chatSendBtn.disabled = isBusy || isGameOver || !ai;
-    if (!ai) chatInput.placeholder = "API key not set. Chat disabled.";
-    else if (isSleeping) chatInput.placeholder = "Giga is sleeping...";
-    else if(isGameOver) chatInput.placeholder = "The chat is disabled.";
-    else chatInput.placeholder = "Say something...";
+    // Actions
+    renderActions();
 
-
-    // Update Game Over state
-    gameOverView.classList.toggle('hidden', !isGameOver);
-    actionButtonsContainer.classList.toggle('hidden', isGameOver);
-}
-
-// --- GAME LOGIC ---
-function updatePetStatus() {
-    if (petState.status === 'SLEEPING' || tempStatusActive) return;
-
-    if (petState.hunger <= MIN_STAT || petState.happiness <= MIN_STAT) {
-        petState.status = 'DEAD';
-        isGameOver = true;
-    } else if (petState.hunger < 30 || petState.happiness < 30 || petState.energy < 20) {
-        petState.status = 'SAD';
-    } else if (petState.happiness > 80 && petState.hunger > 80) {
-        petState.status = 'HAPPY';
-    } else {
-        petState.status = 'NEUTRAL';
+    // Death state
+    dom.overlays.cutscene.classList.toggle('hidden', !gameState.deathType);
+    dom.overlays.gameOver.classList.toggle('hidden', !gameState.isAlive && !gameState.deathType);
+    dom.character.bob.className = 'character-bob'; // reset animation class
+    if (gameState.deathType) {
+        dom.character.bob.classList.add(`anim-${gameState.deathType}`);
+        dom.character.rope.classList.toggle('hidden', gameState.deathType !== 'sadness');
     }
 }
 
-function handleActionWithStatus(action, tempStatus) {
-    if (isGameOver || petState.status === 'SLEEPING' || tempStatusActive) return;
-    
-    tempStatusActive = true;
-    petState.status = tempStatus;
-    render();
+function renderActions() {
+    const container = dom.ui.actionsContainer;
+    container.innerHTML = ''; // Clear previous buttons
 
-    setTimeout(() => {
-        action();
-        tempStatusActive = false;
-        updatePetStatus();
-        render();
-    }, 1500);
-}
-
-function handleFeed() {
-    handleActionWithStatus(() => {
-        petState.hunger = Math.min(MAX_STAT, petState.hunger + FEED_AMOUNT);
-        petState.happiness = Math.min(MAX_STAT, petState.happiness + 5);
-    }, 'EATING');
-}
-
-function handlePlay() {
-    handleActionWithStatus(() => {
-        petState.happiness = Math.min(MAX_STAT, petState.happiness + PLAY_AMOUNT);
-        petState.energy = Math.max(MIN_STAT, petState.energy - ACTION_ENERGY_COST);
-    }, 'PLAYING');
-}
-
-function handleSleep() {
-    if (isGameOver || tempStatusActive) return;
-    petState.status = petState.status === 'SLEEPING' ? 'NEUTRAL' : 'SLEEPING';
-    updatePetStatus();
-    render();
-}
-
-function handleRestart() {
-    petState = { ...INITIAL_PET_STATE };
-    isGameOver = false;
-    chatMessages.innerHTML = '';
-    chatPlaceholder.classList.remove('hidden');
-    render();
-}
-
-// --- CHAT LOGIC ---
-async function getPetResponse(userMessage) {
-    if (!ai) return "I can't talk right now, my AI brain is disconnected.";
-    const { hunger, happiness, energy, status } = petState;
-  
-    const systemInstruction = `You are a cute digital pet named Giga. Your personality is a bit cheeky and playful. 
-    Your responses must be short (1-2 sentences) and reflect your current needs. 
-    Do not use markdown, emojis, or complex formatting. Just return plain text.
-    If you are sad, sound grumpy. If you are happy, sound cheerful. If you are tired, sound sleepy.`;
-
-    const prompt = `My current stats are: Hunger: ${hunger}/100, Happiness: ${happiness}/100, Energy: ${energy}/100, Status: ${status}.
-    The user said to me: "${userMessage}".
-    What is my reply?`;
-
-    try {
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash-preview-04-17",
-            contents: prompt,
-            config: {
-                systemInstruction: systemInstruction,
-                temperature: 0.9,
-                topK: 1,
-                topP: 1,
-                thinkingConfig: { thinkingBudget: 0 }
-            }
-        });
-        return response.text;
-    } catch (error) {
-        console.error("Error fetching response from Gemini:", error);
-        return "I... I don't feel like talking right now. Something's wrong.";
-    }
-}
-
-function addMessageToChat(sender, text) {
-    chatPlaceholder.classList.add('hidden');
-    const messageWrapper = document.createElement('div');
-    messageWrapper.className = `flex items-end gap-2 ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
-
-    let messageContent = '';
-    if (sender === 'pet') {
-        messageContent += `<div class="w-8 h-8 rounded-full bg-cyan-500 flex items-center justify-center text-lg flex-shrink-0">🤖</div>`;
+    if (!gameState.isAlive) {
+        container.innerHTML = `<p class="action-info-text">...</p>`;
+        return;
     }
     
-    messageContent += `<div class="max-w-xs md:max-w-sm lg:max-w-md px-4 py-2 rounded-2xl ${sender === 'user' ? 'bg-blue-600 rounded-br-none' : 'bg-slate-700 rounded-bl-none'}"><p class="text-white font-sans">${text}</p></div>`;
-    
-    messageWrapper.innerHTML = messageContent;
-    chatMessages.appendChild(messageWrapper);
-    chatContainer.scrollTop = chatContainer.scrollHeight;
-}
-
-function showTypingIndicator() {
-    chatPlaceholder.classList.add('hidden');
-    const indicatorHTML = `
-        <div id="typing-indicator" class="flex items-end gap-2 justify-start">
-            <div class="w-8 h-8 rounded-full bg-cyan-500 flex items-center justify-center text-lg flex-shrink-0">🤖</div>
-            <div class="max-w-xs md:max-w-sm lg:max-w-md px-4 py-2 rounded-2xl bg-slate-700 rounded-bl-none">
-                <div class="flex items-center space-x-1">
-                    <span class="w-2 h-2 bg-slate-400 rounded-full animate-pulse_1"></span>
-                    <span class="w-2 h-2 bg-slate-400 rounded-full animate-pulse_2"></span>
-                    <span class="w-2 h-2 bg-slate-400 rounded-full animate-pulse_3"></span>
-                </div>
-            </div>
-        </div>
-    `;
-    chatMessages.insertAdjacentHTML('beforeend', indicatorHTML);
-    chatContainer.scrollTop = chatContainer.scrollHeight;
-}
-
-function removeTypingIndicator() {
-    const indicator = document.getElementById('typing-indicator');
-    if (indicator) {
-        indicator.remove();
+    if (gameState.isTalking) {
+        const d = gameState.currentDialogue;
+        container.innerHTML = `
+            <button class="action-btn" data-action="dialogue" data-type="positive">${d.positiveResponse.text}</button>
+            <button class="action-btn" data-action="dialogue" data-type="negative">${d.negativeResponse.text}</button>
+            ${d.isProposal ? '' : '<button class="action-btn wide-btn" data-action="dialogue" data-type="leave">[Sair]</button>'}
+        `;
+        return;
     }
-}
-
-async function handleSendMessage(e) {
-    e.preventDefault();
-    const userInput = chatInput.value.trim();
-    if (!userInput || tempStatusActive || isGameOver || petState.status === 'SLEEPING') return;
-
-    addMessageToChat('user', userInput);
-    chatInput.value = '';
     
-    tempStatusActive = true;
-    petState.status = 'THINKING';
-    render();
-    showTypingIndicator();
+    const affectionTier = getAffectionTier(gameState.affection);
+    const isDatingOrMarried = affectionTier === 'GIRLFRIEND' || affectionTier === 'WIFE';
 
-    const responseText = await getPetResponse(userInput);
-
-    removeTypingIndicator();
-    addMessageToChat('pet', responseText);
-    tempStatusActive = false;
-    updatePetStatus();
-    render();
-}
-
-// --- INITIALIZATION & GAME LOOP ---
-function startGame() {
-    // Add event listeners
-    feedBtn.addEventListener('click', handleFeed);
-    playBtn.addEventListener('click', handlePlay);
-    sleepBtn.addEventListener('click', handleSleep);
-    restartBtn.addEventListener('click', handleRestart);
-    chatForm.addEventListener('submit', handleSendMessage);
-    
-    // Start game loop
-    setInterval(() => {
-        if (isGameOver) return;
-
-        if (petState.status === 'SLEEPING') {
-            petState.energy = Math.min(MAX_STAT, petState.energy + STAT_DECAY_AMOUNT * 2);
-        } else {
-            petState.hunger = Math.max(MIN_STAT, petState.hunger - STAT_DECAY_AMOUNT);
-            petState.happiness = Math.max(MIN_STAT, petState.happiness - STAT_DECAY_AMOUNT);
-            petState.energy = Math.max(MIN_STAT, petState.energy - Math.round(STAT_DECAY_AMOUNT / 2));
+    let buttons = [];
+    if (isDatingOrMarried) {
+        switch(gameState.view) {
+            case 'HOME':
+                buttons.push({ text: 'Cômodos', action: 'setView', value: 'MENU_COMODOS' });
+                buttons.push({ text: 'Interagir', action: 'setView', value: 'MENU_INTERACOES' });
+                buttons.push({ text: 'Conversar', action: 'talk' });
+                break;
+            case 'MENU_COMODOS':
+                buttons.push({ text: 'Quarto', action: 'setLocation', value: 'QUARTO' });
+                buttons.push({ text: 'Sala', action: 'setLocation', value: 'SALA_DE_ESTAR' });
+                buttons.push({ text: 'Cozinha', action: 'setLocation', value: 'COZINHA' });
+                if (affectionTier === 'WIFE') buttons.push({ text: 'Quintal', action: 'setLocation', value: 'QUINTAL' });
+                buttons.push({ text: 'Voltar', action: 'setView', value: 'HOME', wide: true });
+                break;
+            case 'MENU_INTERACOES':
+                 switch(gameState.currentLocation) {
+                    case 'QUARTO': buttons.push({ text: 'Oba-oba', action: 'interact', value: 'oba' }); break;
+                    case 'COZINHA': buttons.push({ text: 'Alimentar', action: 'feed' }); break;
+                    case 'SALA_DE_ESTAR': buttons.push({ text: 'Assistir Filme', action: 'interact', value: 'movie' }); break;
+                    case 'QUINTAL': buttons.push({ text: 'Viagem', action: 'setView', value: 'MENU_VIAGEM' }); break;
+                 }
+                buttons.push({ text: 'Armário', action: 'setView', value: 'MENU_ARMARIO' });
+                buttons.push({ text: 'Voltar para Casa', action: 'goHome', wide: true });
+                break;
+            case 'MENU_VIAGEM':
+                buttons.push({ text: 'Sorveteria', action: 'setLocation', value: 'SORVETERIA' });
+                buttons.push({ text: 'Shopping', action: 'setLocation', value: 'SHOPPING' });
+                buttons.push({ text: 'Boliche', action: 'setLocation', value: 'BOLICHE' });
+                buttons.push({ text: 'Voltar', action: 'setView', value: 'MENU_INTERACOES', wide: true });
+                break;
+            case 'MENU_ARMARIO':
+                container.innerHTML = `<label class="action-btn file-upload-label"> Importar Imagem <input type="file" id="image-upload" accept="image/*" style="display: none;" /> </label>`;
+                container.innerHTML += `<button class="action-btn wide-btn" data-action="setView" data-value="MENU_INTERACOES">Voltar</button>`;
+                return;
         }
-        
-        updatePetStatus();
-        render();
+    } else {
+        buttons.push({ text: 'Alimentar', action: 'feed' });
+        buttons.push({ text: 'Limpar', action: 'wash' });
+        const canTalk = affectionTier !== 'HATE' && affectionTier !== 'PSYCHOPATH';
+        buttons.push({ text: 'Conversar', action: 'talk', disabled: !canTalk });
+    }
 
-    }, GAME_TICK_INTERVAL_MS);
+    container.innerHTML = buttons.map(b => `<button class="action-btn ${b.wide ? 'wide-btn': ''}" data-action="${b.action}" data-value="${b.value || ''}" ${b.disabled ? 'disabled' : ''}>${b.text}</button>`).join('');
+}
+
+
+// --- GAME LOOPS & ACTIONS ---
+function handleActionClick(e) {
+    const target = e.target.closest('button[data-action]');
+    if (!target) return;
+
+    const { action, value, type } = target.dataset;
+
+    switch (action) {
+        case 'feed':
+            gameState.hunger = Math.min(STAT_MAX, gameState.hunger + 25);
+            gameState.mood = Math.min(STAT_MAX, gameState.mood + 5);
+            showInteractionMessage(`${gameState.name} comeu e parece satisfeita.`);
+            break;
+        case 'wash':
+            gameState.hygiene = STAT_MAX;
+            showInteractionMessage(`Você limpou ${gameState.name}.`);
+            break;
+        case 'talk':
+            handleTalk();
+            break;
+        case 'dialogue':
+            handleDialogueChoice(type);
+            break;
+        case 'setView':
+            gameState.view = value;
+            break;
+        case 'setLocation':
+            gameState.currentLocation = value;
+            gameState.view = 'HOME';
+            break;
+        case 'goHome':
+            gameState.currentLocation = 'QUARTO';
+            gameState.view = 'HOME';
+            break;
+        case 'interact':
+            if (value === 'oba') showInteractionMessage('As luzes diminuem... :)', 3000);
+            if (value === 'movie') showInteractionMessage('Vocês assistem a um filme romântico.', 3000);
+            gameState.mood = Math.min(STAT_MAX, gameState.mood + 15);
+            break;
+    }
+    render();
+}
+
+function handleTalk() {
+    const affectionTier = getAffectionTier(gameState.affection);
+    const dialogues = dialogueDatabase[gameState.personality]?.[affectionTier] || dialogueDatabase.NORMAL.UNKNOWN;
+    const dialogue = getRandom(dialogues);
+    
+    // Check for proposals
+    const oldAffection = gameState.affection;
+    if(oldAffection >= 90 && oldAffection <= 95 && affectionTier === 'BEST_FRIEND') {
+        gameState.currentDialogue = PROPOSAL_DIALOGUE;
+    } else if (oldAffection >= 150 && oldAffection <= 155 && affectionTier === 'GIRLFRIEND') {
+        gameState.currentDialogue = MARRIAGE_PROPOSAL_DIALOGUE;
+    } else {
+        gameState.currentDialogue = dialogue;
+    }
+    
+    gameState.isTalking = true;
+    render();
+}
+
+function handleDialogueChoice(type) {
+    const d = gameState.currentDialogue;
+    if (type !== 'leave') {
+        if (d.isProposal) {
+            if (type === 'positive') {
+                gameState.affection = d.isMarriage ? 151 : 91;
+                showInteractionMessage(d.isMarriage ? "É o dia mais feliz da vida de vocês!" : "Vocês estão namorando!", 4000);
+            } else {
+                gameState.affection = d.isMarriage ? 40 : -20;
+                showInteractionMessage(d.isMarriage ? "O coração dela se partiu..." : "Ela ficou de coração partido.", 4000);
+            }
+        } else {
+            const response = d[type === 'positive' ? 'positiveResponse' : 'negativeResponse'];
+            gameState.mood = Math.max(0, Math.min(STAT_MAX, gameState.mood + response.moodEffect));
+            gameState.affection += response.affectionEffect;
+        }
+    }
+    gameState.isTalking = false;
+    gameState.currentDialogue = null;
+    render();
+}
+
+function handleImageUpload(e) {
+    const file = e.target.files?.[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            gameState.characterImageUrl = event.target.result;
+            showInteractionMessage("Visual atualizado!", 2000);
+            render();
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+
+function gameTick() {
+    // Stat Decay
+    if (!gameState.isTalking) {
+      gameState.hunger = Math.max(0, gameState.hunger - STAT_DECAY_RATE);
+      gameState.hygiene = Math.max(0, gameState.hygiene - STAT_DECAY_RATE);
+      const isDirty = gameState.hygiene < 30;
+      gameState.mood = Math.max(0, gameState.mood - (isDirty ? STAT_DECAY_RATE * 1.5 : STAT_DECAY_RATE));
+    }
+    
+    // Clock
+    let { year, month, day, hour, minute } = gameState.gameTime;
+    minute += TIME_SPEED_MULTIPLIER;
+    if (minute >= 60) { hour += Math.floor(minute / 60); minute %= 60; }
+    if (hour >= 24) { day += Math.floor(hour / 24); hour %= 24; }
+    if (day > 30) { month += Math.floor(day / 30); day %= 30; if(day === 0) day = 1; }
+    if (month > 12) { year += Math.floor(month / 12); month %= 12; if(month === 0) month = 1; }
+    gameState.gameTime = { year, month, day, hour, minute };
     
     render();
 }
 
-startGame();
+function deathCheck() {
+    if (!gameState.isAlive) return;
+    
+    // Hunger death
+    if (gameState.hunger <= 0) {
+        if (gameState.zeroHungerTime === null) gameState.zeroHungerTime = Date.now();
+        if (Date.now() - gameState.zeroHungerTime > DEATH_TIMER_DURATION) { triggerDeath('hunger'); return; }
+    } else {
+        gameState.zeroHungerTime = null;
+    }
 
+    // Sadness death
+    if (gameState.mood <= 0) {
+        if (gameState.zeroMoodTime === null) gameState.zeroMoodTime = Date.now();
+        if (Date.now() - gameState.zeroMoodTime > DEATH_TIMER_DURATION) { triggerDeath('sadness'); return; }
+    } else {
+        gameState.zeroMoodTime = null;
+    }
+
+    // Psycho death
+    if (getAffectionTier(gameState.affection) === 'PSYCHOPATH') {
+        triggerDeath('psycho');
+    }
+}
+
+function triggerDeath(reason) {
+    gameState.isAlive = false;
+    gameState.deathType = reason;
+    let msg = '';
+    switch (reason) {
+        case 'hunger': msg = `${gameState.name} desmaiou de fraqueza e não acordou mais.`; break;
+        case 'sadness': msg = `A tristeza foi demais para ${gameState.name}. Ela se foi.`; break;
+        case 'psycho': msg = `Ela te olhou com um vazio aterrorizante... Você apagou.`; break;
+    }
+    // Delay showing the final message
+    setTimeout(() => {
+        dom.overlays.gameOver.classList.remove('hidden');
+        dom.overlays.gameOverMsg.textContent = msg;
+    }, 2500);
+    render();
+}
+
+function movementTick() {
+    if (gameState.isTalking || !gameState.isAlive || gameState.deathType) {
+        gameState.isWalking = false;
+        render();
+        gameIntervals.movement = setTimeout(movementTick, Math.random() * 3000 + 2000);
+        return;
+    }
+    const isCurrentlyWalking = Math.random() > 0.4;
+    if (isCurrentlyWalking) {
+        const newTargetX = (Math.random() - 0.5) * 350;
+        gameState.facingDirection = newTargetX > gameState.charPositionX ? 'right' : 'left';
+        const distance = Math.abs(newTargetX - gameState.charPositionX);
+        const walkSpeed = 50;
+        const walkDuration = Math.max(1000, (distance / walkSpeed) * 1000);
+        
+        gameState.transitionDuration = `${walkDuration / 1000}s`;
+        gameState.charPositionX = newTargetX;
+        gameState.isWalking = true;
+        render();
+        
+        gameIntervals.movement = setTimeout(() => {
+            gameState.isWalking = false;
+            render();
+            gameIntervals.movement = setTimeout(movementTick, Math.random() * 3000 + 2000);
+        }, walkDuration);
+    } else {
+        gameState.isWalking = false;
+        render();
+        gameIntervals.movement = setTimeout(movementTick, Math.random() * 3000 + 2000);
+    }
+}
+
+function stopGame() {
+    Object.values(gameIntervals).forEach(i => i && clearInterval(i));
+}
+
+function init() {
+    stopGame();
+    dialogueDatabase = buildFullDatabase();
+    const savedState = loadState();
+    gameState = savedState && savedState.isAlive ? savedState : createNewGame();
+    
+    gameIntervals.clock = setInterval(gameTick, 1000);
+    gameIntervals.decay = setInterval(() => { /* handled in clock tick */ }, DECAY_INTERVAL);
+    gameIntervals.death = setInterval(deathCheck, 1000);
+    movementTick();
+
+    // Event Listeners
+    dom.ui.actionsContainer.addEventListener('click', handleActionClick);
+    dom.overlays.restartBtn.addEventListener('click', init);
+    // Use event delegation for upload button as it's dynamically created
+    document.body.addEventListener('change', e => {
+        if (e.target.id === 'image-upload') handleImageUpload(e);
+    });
+
+    // Save game state periodically
+    gameIntervals.save = setInterval(saveState, 5000);
+    
+    render();
+}
+
+// Start the game
+init();
+
+});
 </script>
 <script type="module" src="/index.tsx"></script>
 </body>
