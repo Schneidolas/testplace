@@ -175,6 +175,9 @@
           height: 40px; background: #8B4513; transform: translateX(-50%);
       }
       @keyframes hang-sway { 0%, 100% { transform: rotate(5deg); } 50% { transform: rotate(-5deg); } }
+      .anim-psycho .character-bob { animation: psycho-twitch 0.5s infinite; }
+      .knife { width: 10px; height: 30px; background: #ccc; position: absolute; z-index: 10; top: 80px; right: 10px; transform: rotate(20deg); border: 1px solid #333; border-radius: 4px 0 0 4px; }
+      @keyframes psycho-twitch { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(2px); } }
       .action-info-text { text-align: center; width: 100%; font-size: 14px; padding: 15px 0; }
       .wide-btn { flex-basis: 100% !important; flex-grow: 1 !important; }
     </style>
@@ -206,6 +209,7 @@
                         <div class="character-shadow"></div>
                         <div class="character-sprite">
                             <div id="rope" class="rope hidden"></div>
+                            <div id="knife" class="knife hidden"></div>
                             <img id="character-image" src="./character.png" alt="Character" class="character-image" />
                         </div>
                     </div>
@@ -243,10 +247,9 @@ document.addEventListener('DOMContentLoaded', () => {
 // --- CONSTANTS, TYPES & DATA ---
 const SAVE_KEY = 'gemochi_save_v2';
 const STAT_MAX = 100;
-const STAT_DECAY_RATE = 1;
-const DECAY_INTERVAL = 6000;
 const DEATH_TIMER_DURATION = 30000;
 const TIME_SPEED_MULTIPLIER = 20;
+const DECAY_TICK_INTERVAL = 30000; // 30 seconds for stat decay
 
 const FEMALE_NAMES = ["Lia", "Pixel", "Nina", "Gabi", "Tete", "Carol", "Emi", "Flora", "Maya", "Yuki"];
 const PERSONALITIES = ['TIMIDA', 'CALADA', 'IMPULSIVA', 'BOCA_SUJA', 'FOFA', 'MALANDRA', 'PIADISTA', 'SAFADA', 'BAGUNCEIRA', 'NORMAL', 'MENTE_FECHADA'];
@@ -376,6 +379,7 @@ const dom = {
         bob: document.getElementById('character-bob'),
         image: document.getElementById('character-image'),
         rope: document.getElementById('rope'),
+        knife: document.getElementById('knife'),
     },
     ui: {
         speechBubble: document.getElementById('speech-bubble'),
@@ -391,7 +395,7 @@ const dom = {
 
 // --- GAME STATE & LOGIC ---
 let gameState = {};
-let gameIntervals = { clock: null, decay: null, movement: null, death: null };
+let gameIntervals = { clock: null, decay: null, movement: null, death: null, save: null };
 let interactionTimeout = null;
 
 function saveState() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(gameState)); } catch (e) { console.warn("Failed to save state.", e); } }
@@ -479,12 +483,16 @@ function render() {
     renderActions();
 
     // Death state
-    dom.overlays.cutscene.classList.toggle('hidden', !gameState.deathType);
-    dom.overlays.gameOver.classList.toggle('hidden', !gameState.isAlive && !gameState.deathType);
     dom.character.bob.className = 'character-bob'; // reset animation class
     if (gameState.deathType) {
+        dom.overlays.cutscene.classList.remove('hidden');
         dom.character.bob.classList.add(`anim-${gameState.deathType}`);
         dom.character.rope.classList.toggle('hidden', gameState.deathType !== 'sadness');
+        dom.character.knife.classList.toggle('hidden', gameState.deathType !== 'psycho');
+    } else {
+        dom.overlays.cutscene.classList.add('hidden');
+        dom.character.rope.classList.add('hidden');
+        dom.character.knife.classList.add('hidden');
     }
 }
 
@@ -560,7 +568,7 @@ function renderActions() {
 // --- GAME LOOPS & ACTIONS ---
 function handleActionClick(e) {
     const target = e.target.closest('button[data-action]');
-    if (!target) return;
+    if (!target || !gameState.isAlive) return;
 
     const { action, value, type } = target.dataset;
 
@@ -601,6 +609,7 @@ function handleActionClick(e) {
 }
 
 function handleTalk() {
+    if (gameState.isTalking) return;
     const affectionTier = getAffectionTier(gameState.affection);
     const dialogues = dialogueDatabase[gameState.personality]?.[affectionTier] || dialogueDatabase.NORMAL.UNKNOWN;
     const dialogue = getRandom(dialogues);
@@ -654,17 +663,8 @@ function handleImageUpload(e) {
     }
 }
 
-
-function gameTick() {
-    // Stat Decay
-    if (!gameState.isTalking) {
-      gameState.hunger = Math.max(0, gameState.hunger - STAT_DECAY_RATE);
-      gameState.hygiene = Math.max(0, gameState.hygiene - STAT_DECAY_RATE);
-      const isDirty = gameState.hygiene < 30;
-      gameState.mood = Math.max(0, gameState.mood - (isDirty ? STAT_DECAY_RATE * 1.5 : STAT_DECAY_RATE));
-    }
-    
-    // Clock
+function clockTick() {
+    if (!gameState.isAlive) return;
     let { year, month, day, hour, minute } = gameState.gameTime;
     minute += TIME_SPEED_MULTIPLIER;
     if (minute >= 60) { hour += Math.floor(minute / 60); minute %= 60; }
@@ -672,7 +672,15 @@ function gameTick() {
     if (day > 30) { month += Math.floor(day / 30); day %= 30; if(day === 0) day = 1; }
     if (month > 12) { year += Math.floor(month / 12); month %= 12; if(month === 0) month = 1; }
     gameState.gameTime = { year, month, day, hour, minute };
-    
+    render();
+}
+
+function decayTick() {
+    if (!gameState.isAlive || gameState.isTalking) return;
+    gameState.hunger = Math.max(0, gameState.hunger - 1);
+    gameState.hygiene = Math.max(0, gameState.hygiene - 1);
+    const isDirty = gameState.hygiene < 30;
+    gameState.mood = Math.max(0, gameState.mood - (isDirty ? 1.5 : 1));
     render();
 }
 
@@ -702,6 +710,9 @@ function deathCheck() {
 }
 
 function triggerDeath(reason) {
+    if (!gameState.isAlive) return;
+    
+    stopGame();
     gameState.isAlive = false;
     gameState.deathType = reason;
     let msg = '';
@@ -710,15 +721,17 @@ function triggerDeath(reason) {
         case 'sadness': msg = `A tristeza foi demais para ${gameState.name}. Ela se foi.`; break;
         case 'psycho': msg = `Ela te olhou com um vazio aterrorizante... Você apagou.`; break;
     }
-    // Delay showing the final message
+    
+    render(); // Render the death animation
+    
     setTimeout(() => {
         dom.overlays.gameOver.classList.remove('hidden');
         dom.overlays.gameOverMsg.textContent = msg;
     }, 2500);
-    render();
 }
 
 function movementTick() {
+    clearTimeout(gameIntervals.movement); // Clear previous timeout
     if (gameState.isTalking || !gameState.isAlive || gameState.deathType) {
         gameState.isWalking = false;
         render();
@@ -751,33 +764,42 @@ function movementTick() {
 }
 
 function stopGame() {
-    Object.values(gameIntervals).forEach(i => i && clearInterval(i));
+    Object.values(gameIntervals).forEach(id => {
+        if (id) {
+            clearInterval(id);
+            clearTimeout(id);
+        }
+    });
+    gameIntervals = { clock: null, decay: null, movement: null, death: null, save: null };
 }
 
 function init() {
     stopGame();
     dialogueDatabase = buildFullDatabase();
     const savedState = loadState();
-    gameState = savedState && savedState.isAlive ? savedState : createNewGame();
+    gameState = (savedState && savedState.isAlive) ? savedState : createNewGame();
     
-    gameIntervals.clock = setInterval(gameTick, 1000);
-    gameIntervals.decay = setInterval(() => { /* handled in clock tick */ }, DECAY_INTERVAL);
-    gameIntervals.death = setInterval(deathCheck, 1000);
-    movementTick();
+    // Hide overlays on start/restart
+    dom.overlays.cutscene.classList.add('hidden');
+    dom.overlays.gameOver.classList.add('hidden');
 
-    // Event Listeners
-    dom.ui.actionsContainer.addEventListener('click', handleActionClick);
-    dom.overlays.restartBtn.addEventListener('click', init);
-    // Use event delegation for upload button as it's dynamically created
-    document.body.addEventListener('change', e => {
-        if (e.target.id === 'image-upload') handleImageUpload(e);
-    });
+    gameIntervals.clock = setInterval(clockTick, 1000);
+    gameIntervals.decay = setInterval(decayTick, DECAY_TICK_INTERVAL);
+    gameIntervals.death = setInterval(deathCheck, 1000);
+    movementTick(); // Start the first movement tick
 
     // Save game state periodically
     gameIntervals.save = setInterval(saveState, 5000);
     
     render();
 }
+
+// Attach listeners once
+dom.ui.actionsContainer.addEventListener('click', handleActionClick);
+dom.overlays.restartBtn.addEventListener('click', init);
+document.body.addEventListener('change', e => {
+    if (e.target.id === 'image-upload') handleImageUpload(e);
+});
 
 // Start the game
 init();
